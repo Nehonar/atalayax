@@ -2,9 +2,11 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Activity } from 'lucide-react';
 
+type NavItem = string | { label: string; href: string };
+
 type AppShellProps = {
   children: ReactNode;
-  navItems?: string[];
+  navItems?: NavItem[];
 };
 
 export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arquitectura', 'Dashboard'] }: AppShellProps) {
@@ -24,11 +26,24 @@ export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arqui
             </Link>
 
             <nav className="flex flex-wrap gap-3 text-sm text-white/60">
-              {navItems.map((item) => (
-                <span key={item} className="rounded-full border border-white/10 px-4 py-2">
-                  {item}
-                </span>
-              ))}
+              {navItems.map((item) => {
+                if (typeof item === 'string') {
+                  return (
+                    <span key={item} className="rounded-full border border-white/10 px-4 py-2">
+                      {item}
+                    </span>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="rounded-full border border-cyan-400/20 bg-cyan-400/8 px-4 py-2 text-cyan-200 transition hover:bg-cyan-400/15"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </div>

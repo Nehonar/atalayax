@@ -13,6 +13,11 @@ const envSchema = z.object({
   SMTP_SECURE: z.coerce.boolean().default(false),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASSWORD: z.string().optional().default(''),
+  // MinIO (optional – used when MINIO_ENDPOINT is set, otherwise in-memory storage is used)
+  MINIO_ENDPOINT: z.string().url().optional(),
+  MINIO_ACCESS_KEY: z.string().optional().default(''),
+  MINIO_SECRET_KEY: z.string().optional().default(''),
+  MINIO_BUCKET: z.string().optional().default('sensor-demo-uploads'),
 });
 
 export const env = envSchema.parse(process.env);

@@ -67,3 +67,61 @@ export type DashboardOverviewDto = {
   trends: DashboardTrendDto[];
   mailbox: MailboxMessageDto[];
 };
+
+// Sensor Demo
+export type SensorColumnType = 'timestamp' | 'numeric' | 'string';
+
+export type SensorColumn = {
+  name: string;
+  type: SensorColumnType;
+  sample: string[];
+};
+
+export type ThresholdConfig = {
+  warnLow: number;
+  warnHigh: number;
+};
+
+export type AnomalyEventType = 'above_warn' | 'below_warn' | 'approaching_high' | 'approaching_low';
+
+export type AnomalyEvent = {
+  timestamp: string;
+  value: number;
+  index: number;
+  type: AnomalyEventType;
+  comparedToMean: number | null;
+  comparedToPrevBlock: number | null;
+  deviation: number;
+};
+
+export type CompressedBlock = {
+  mean: number;
+  count: number;
+  startTimestamp: string;
+  endTimestamp: string;
+  blockIndex: number;
+};
+
+export type SensorAnalysisResult = {
+  totalPoints: number;
+  anomalies: AnomalyEvent[];
+  compressedBlocks: CompressedBlock[];
+  overallMean: number;
+  minValue: number;
+  maxValue: number;
+};
+
+export type SensorParseResponseDto = {
+  fileId: string;
+  columns: SensorColumn[];
+  rowCount: number;
+  preview: Record<string, string>[];
+};
+
+export type SensorAnalyzeRequestDto = {
+  fileId: string;
+  timestampColumn: string;
+  sensorColumn: string;
+  warnLow: number;
+  warnHigh: number;
+};

@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AuthSessionDto } from '@atalayax/types';
-import { DashboardShell } from '../../components/dashboard-shell';
 import { AppShell } from '../../components/ui-shell';
+import { SensorDemoShell } from '../../components/sensor-demo-shell';
 import { readSession } from '../../lib/auth';
 
-export default function DashboardPage() {
+export default function DemoPage() {
   const router = useRouter();
   const [session, setSession] = useState<AuthSessionDto | null>(null);
   const [ready, setReady] = useState(false);
@@ -33,14 +33,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppShell navItems={['Alertas', 'Tendencias', 'Correo', { label: 'Demo Sensores', href: '/demo' }]}>
-      <DashboardShell
-        session={session}
-        onLogout={() => {
-          setSession(null);
-          router.replace('/login');
-        }}
-      />
+    <AppShell navItems={[{ label: 'Dashboard', href: '/dashboard' }]}>
+      <SensorDemoShell session={session} />
     </AppShell>
   );
 }
