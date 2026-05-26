@@ -389,25 +389,32 @@ function ResultsContent({ result, cfg }: { result: SensorAnalysisResult; cfg: Cf
       {/* Compressed chart */}
       <div className="rounded-[2rem] border border-white/10 bg-white/3 p-5">
         <p className="mb-1 text-sm font-medium text-white/70">Vista comprimida — {result.compressedBlocks.length} bloques</p>
-        <div className="relative mt-4 h-36 rounded-2xl bg-[linear-gradient(180deg,rgba(34,211,238,0.04),transparent)] p-3">
-          <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-rose-400/40" style={{ bottom: `${barH(cfg.warnHigh)}%` }}>
-            <span className="absolute right-0 -top-4 text-[10px] text-rose-300/60">↑ {cfg.warnHigh}</span>
+        <div className="mt-4 flex gap-2">
+          {/* Y-axis labels */}
+          <div className="relative shrink-0 w-9" style={{ height: 144 }}>
+            <span className="absolute right-0 text-[10px] text-white/35 leading-none" style={{ bottom: '96%', transform: 'translateY(50%)' }}>{round2(maxMean)}</span>
+            <span className="absolute right-0 text-[10px] text-rose-300/75 leading-none font-medium" style={{ bottom: `${barH(cfg.warnHigh)}%`, transform: 'translateY(50%)' }}>{cfg.warnHigh}</span>
+            <span className="absolute right-0 text-[10px] text-amber-300/75 leading-none font-medium" style={{ bottom: `${barH(cfg.warnLow)}%`, transform: 'translateY(50%)' }}>{cfg.warnLow}</span>
+            <span className="absolute right-0 text-[10px] text-white/35 leading-none" style={{ bottom: 0, transform: 'translateY(50%)' }}>{round2(minMean)}</span>
           </div>
-          <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-amber-400/40" style={{ bottom: `${barH(cfg.warnLow)}%` }}>
-            <span className="absolute right-0 text-[10px] text-amber-300/60">↓ {cfg.warnLow}</span>
-          </div>
-          <div className="flex h-full items-end gap-px overflow-hidden">
-            {result.compressedBlocks.map((b, i) => (
-              <div key={i} title={`Bloque ${i + 1}: ${round2(b.mean)}`}
-                className={`flex-1 rounded-t-sm ${barColor(b.mean)}`}
-                style={{ height: `${barH(b.mean)}%` }} />
-            ))}
+          {/* Bars */}
+          <div className="relative flex-1 rounded-2xl bg-[linear-gradient(180deg,rgba(34,211,238,0.04),transparent)] p-3 overflow-hidden" style={{ height: 144 }}>
+            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-rose-400/50" style={{ bottom: `${barH(cfg.warnHigh)}%` }} />
+            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-amber-400/40" style={{ bottom: `${barH(cfg.warnLow)}%` }} />
+            <div className="flex h-full items-end gap-px overflow-hidden">
+              {result.compressedBlocks.map((b, i) => (
+                <div key={i} title={`Bloque ${i + 1}: ${round2(b.mean)}`}
+                  className={`flex-1 rounded-t-sm ${barColor(b.mean)}`}
+                  style={{ height: `${barH(b.mean)}%` }} />
+              ))}
+            </div>
           </div>
         </div>
-        <div className="mt-2 flex gap-4 text-[11px] text-white/35">
+        <div className="mt-2 flex gap-4 text-[11px] text-white/35 pl-11">
           <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-cyan-300/70" />Normal</span>
           <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-amber-400/70" />Tendencia</span>
           <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-rose-400/80" />Anomalía</span>
+          <span className="ml-auto text-white/20">↑ {cfg.warnHigh} límite sup. · ↓ {cfg.warnLow} límite inf.</span>
         </div>
       </div>
 
