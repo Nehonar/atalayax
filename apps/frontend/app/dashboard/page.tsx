@@ -33,7 +33,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppShell navItems={['Dashboard', 'Alertas', 'Tendencias', 'Correo']}>
+    <AppShell navItems={['Alertas', 'Tendencias', 'Correo', { label: 'Demo Sensores', href: '/demo' }]}>
       <DashboardShell
         session={session}
         onLogout={() => {

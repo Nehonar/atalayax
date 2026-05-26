@@ -4,6 +4,9 @@ import type {
   DashboardSummaryDto,
   HealthResponseDto,
   LoginRequestDto,
+  SensorAnalysisResult,
+  SensorAnalyzeRequestDto,
+  SensorParseResponseDto,
   UserRole,
 } from '@atalayax/types';
 
@@ -54,4 +57,43 @@ export function getDashboardOverview(role: UserRole) {
 
 export function login(payload: LoginRequestDto) {
   return sendJson<AuthSessionDto, LoginRequestDto>('/auth/login', payload);
+}
+
+export async function uploadSensorFile(file: File, token: string): Promise<SensorParseResponseDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/sensor-demo/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Error ${response.status}`);
+  }
+
+  return response.json() as Promise<SensorParseResponseDto>;
+}
+
+export async function analyzeSensorData(
+  payload: SensorAnalyzeRequestDto,
+  token: string,
+): Promise<SensorAnalysisResult> {
+  const response = await fetch(`${API_URL}/sensor-demo/analyze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Error ${response.status}`);
+  }
+
+  return response.json() as Promise<SensorAnalysisResult>;
 }

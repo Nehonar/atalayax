@@ -1,0 +1,35 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to Oracle Cloud
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 80.225.189.112
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/atalayax
+
+            echo "── Pulling latest code ──"
+            git fetch origin master
+            git reset --hard origin/master
+
+            echo "── Rebuilding and restarting containers ──"
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "── Cleaning up old images ──"
+            docker image prune -f
+
+            echo "── Done ──"
+            docker compose -f docker-compose.prod.yml ps

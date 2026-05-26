@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.prod.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://api.atalayax.com/api
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      API_URL: http://backend:4000/api
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.prod.Dockerfile
+    ports:
+      - "127.0.0.1:4000:4000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+    restart: unless-stopped
