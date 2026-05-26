@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CheckCircle,
   ChevronUp,
+  Clock,
   Loader2,
   TrendingDown,
   TrendingUp,
@@ -14,14 +15,17 @@ import {
 import type {
   AnomalyEvent,
   AuthSessionDto,
+  DriftSegment,
   ResolutionLevel,
   SensorAnalysisResult,
   SensorParseResponseDto,
+  TimePattern,
 } from '@atalayax/types';
 import { analyzeSensorData, uploadSensorFile } from '../lib/api';
 import { saveDemo } from '../lib/demo-store';
 
 type Step = 'upload' | 'configure' | 'results';
+type Cfg = { resolution: ResolutionLevel; warnLow: number; warnHigh: number; sensorCol: string; tsCol: string };
 
 type SensorDemoShellProps = {
   session: AuthSessionDto;
@@ -31,12 +35,14 @@ type SensorDemoShellProps = {
 };
 
 const anomalyMeta: Record<AnomalyEvent['type'], { label: string; color: string; trend: 'up' | 'down' }> = {
-  above_warn:      { label: 'Por encima del límite',    color: 'text-rose-300 border-rose-400/20 bg-rose-400/10',   trend: 'up' },
-  below_warn:      { label: 'Por debajo del límite',    color: 'text-amber-300 border-amber-400/20 bg-amber-400/10', trend: 'down' },
-  approaching_high:{ label: 'Tendencia al límite alto', color: 'text-orange-300 border-orange-400/20 bg-orange-400/10', trend: 'up' },
-  approaching_low: { label: 'Tendencia al límite bajo', color: 'text-yellow-300 border-yellow-400/20 bg-yellow-400/10', trend: 'down' },
-  statistical_high:{ label: 'Pico estadístico alto',    color: 'text-fuchsia-300 border-fuchsia-400/20 bg-fuchsia-400/10', trend: 'up' },
-  statistical_low: { label: 'Pico estadístico bajo',    color: 'text-violet-300 border-violet-400/20 bg-violet-400/10', trend: 'down' },
+  above_warn:       { label: 'Por encima del límite',    color: 'text-rose-300 border-rose-400/20 bg-rose-400/10',     trend: 'up' },
+  below_warn:       { label: 'Por debajo del límite',    color: 'text-amber-300 border-amber-400/20 bg-amber-400/10',  trend: 'down' },
+  approaching_high: { label: 'Tendencia al límite alto', color: 'text-orange-300 border-orange-400/20 bg-orange-400/10', trend: 'up' },
+  approaching_low:  { label: 'Tendencia al límite bajo', color: 'text-yellow-300 border-yellow-400/20 bg-yellow-400/10', trend: 'down' },
+  statistical_high: { label: 'Pico estadístico alto',    color: 'text-fuchsia-300 border-fuchsia-400/20 bg-fuchsia-400/10', trend: 'up' },
+  statistical_low:  { label: 'Pico estadístico bajo',    color: 'text-violet-300 border-violet-400/20 bg-violet-400/10',  trend: 'down' },
+  drift_up:         { label: 'Deriva progresiva al alza', color: 'text-orange-300 border-orange-400/20 bg-orange-400/10', trend: 'up' },
+  drift_down:       { label: 'Deriva progresiva a la baja', color: 'text-sky-300 border-sky-400/20 bg-sky-400/10',      trend: 'down' },
 };
 
 const resolutionConfig: Record<ResolutionLevel, { label: string; hint: string }> = {
@@ -46,13 +52,13 @@ const resolutionConfig: Record<ResolutionLevel, { label: string; hint: string }>
 };
 
 function round2(n: number) { return Math.round(n * 100) / 100; }
+function pad2(n: number) { return String(n).padStart(2, '0'); }
 
 // ─── Step 1: Upload ──────────────────────────────────────────────────────────
 
-function UploadStep({ token, onParsed, fileName, setFileName }: {
+function UploadStep({ token, onParsed, setFileName }: {
   token: string;
   onParsed: (r: SensorParseResponseDto) => void;
-  fileName: string;
   setFileName: (n: string) => void;
 }) {
   const [dragging, setDragging] = useState(false);
@@ -65,8 +71,7 @@ function UploadStep({ token, onParsed, fileName, setFileName }: {
     setLoading(true);
     setFileName(file.name);
     try {
-      const result = await uploadSensorFile(file, token);
-      onParsed(result);
+      onParsed(await uploadSensorFile(file, token));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al subir el archivo');
     } finally {
@@ -78,18 +83,14 @@ function UploadStep({ token, onParsed, fileName, setFileName }: {
     <div className="mx-auto max-w-2xl">
       <h2 className="text-2xl font-semibold tracking-tight">Sube el archivo de datos</h2>
       <p className="mt-2 text-white/55">Acepta <span className="text-cyan-300">.xlsx · .xls · .csv</span> de hasta 10 MB.</p>
-
-      <button
-        type="button"
-        disabled={loading}
+      <button type="button" disabled={loading}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) void handleFile(f); }}
-        className={`mt-6 flex w-full flex-col items-center justify-center gap-5 rounded-[2rem] border-2 border-dashed px-8 py-14 transition ${
-          dragging ? 'border-cyan-400/60 bg-cyan-400/8' : 'border-white/15 bg-white/3 hover:border-white/25 hover:bg-white/5'
-        } ${loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-      >
+        className={`mt-6 flex w-full flex-col items-center justify-center gap-5 rounded-[2rem] border-2 border-dashed px-8 py-14 transition
+          ${dragging ? 'border-cyan-400/60 bg-cyan-400/8' : 'border-white/15 bg-white/3 hover:border-white/25 hover:bg-white/5'}
+          ${loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
         {loading ? (
           <><Loader2 className="h-9 w-9 animate-spin text-cyan-300" /><p className="text-white/60">Procesando…</p></>
         ) : (
@@ -106,7 +107,6 @@ function UploadStep({ token, onParsed, fileName, setFileName }: {
       </button>
       <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.target.value = ''; }} />
-
       {error && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{error}
@@ -122,7 +122,7 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
   parsed: SensorParseResponseDto;
   token: string;
   onBack: () => void;
-  onAnalyze: (r: SensorAnalysisResult, cfg: { resolution: ResolutionLevel; warnLow?: number; warnHigh?: number; sensorCol: string; tsCol: string }) => void;
+  onAnalyze: (r: SensorAnalysisResult, cfg: Cfg) => void;
 }) {
   const tsCols = parsed.columns.filter((c) => c.type === 'timestamp');
   const numCols = parsed.columns.filter((c) => c.type === 'numeric');
@@ -130,7 +130,6 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
   const [tsCol, setTsCol] = useState(tsCols[0]?.name ?? parsed.columns[0]?.name ?? '');
   const [sensorCol, setSensorCol] = useState(numCols[0]?.name ?? parsed.columns[1]?.name ?? '');
   const [resolution, setResolution] = useState<ResolutionLevel>(2);
-  const [expertMode, setExpertMode] = useState(false);
   const [warnLow, setWarnLow] = useState('');
   const [warnHigh, setWarnHigh] = useState('');
   const [loading, setLoading] = useState(false);
@@ -139,17 +138,10 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-
-    let low: number | undefined;
-    let high: number | undefined;
-
-    if (expertMode) {
-      low = parseFloat(warnLow);
-      high = parseFloat(warnHigh);
-      if (isNaN(low) || isNaN(high)) { setError('Introduce valores numéricos válidos para los umbrales.'); return; }
-      if (low >= high) { setError('El límite inferior debe ser menor que el superior.'); return; }
-    }
-
+    const low = parseFloat(warnLow);
+    const high = parseFloat(warnHigh);
+    if (isNaN(low) || isNaN(high)) { setError('Introduce los umbrales del proceso.'); return; }
+    if (low >= high) { setError('El límite inferior debe ser menor que el superior.'); return; }
     setLoading(true);
     try {
       const result = await analyzeSensorData(
@@ -197,6 +189,7 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
       </div>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
+        {/* Columns */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="block text-sm text-white/50">Columna de timestamp</label>
@@ -214,10 +207,32 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
           </div>
         </div>
 
-        {/* Resolución */}
+        {/* Thresholds — always required */}
+        <div className="rounded-[1.5rem] border border-cyan-400/15 bg-cyan-400/5 p-5">
+          <p className="mb-1 text-sm font-medium text-white/85">Rango aceptable del proceso</p>
+          <p className="mb-4 text-xs text-white/45">
+            Define qué valores son normales para este sensor. El sistema avisará antes de que se alcancen estos límites.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/50">Límite inferior</label>
+              <input type="number" step="any" value={warnLow} onChange={(e) => setWarnLow(e.target.value)}
+                placeholder="ej. -22" required
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-white/25 focus:border-cyan-400/40 focus:outline-none" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/50">Límite superior</label>
+              <input type="number" step="any" value={warnHigh} onChange={(e) => setWarnHigh(e.target.value)}
+                placeholder="ej. -15" required
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-white/25 focus:border-cyan-400/40 focus:outline-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Resolution */}
         <div className="rounded-[1.5rem] border border-white/10 bg-white/3 p-5">
-          <p className="mb-1 text-sm font-medium text-white/80">Resolución de detección</p>
-          <p className="mb-4 text-xs text-white/40">Cuánto afinas el análisis. A más resolución, más pequeñas son las anomalías que detecta.</p>
+          <p className="mb-1 text-sm font-medium text-white/80">Resolución de detección estadística</p>
+          <p className="mb-4 text-xs text-white/40">Además de los límites, el sistema detecta anomalías estadísticas. Ajusta la sensibilidad.</p>
           <div className="grid grid-cols-3 gap-2">
             {([1, 2, 3] as ResolutionLevel[]).map((r) => (
               <button key={r} type="button" onClick={() => setResolution(r)}
@@ -227,34 +242,6 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Modo experto */}
-        <div className="rounded-[1.5rem] border border-white/10 bg-white/3 p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-white/80">Modo experto — umbrales manuales</p>
-              <p className="mt-0.5 text-xs text-white/40">Activa si conoces los límites exactos del proceso</p>
-            </div>
-            <button type="button" onClick={() => setExpertMode((v) => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${expertMode ? 'bg-cyan-400' : 'bg-white/15'}`}>
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${expertMode ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-          {expertMode && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="block text-sm text-white/50">Límite inferior</label>
-                <input type="number" step="any" value={warnLow} onChange={(e) => setWarnLow(e.target.value)}
-                  placeholder="ej. -22" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-white/25 focus:border-cyan-400/40 focus:outline-none" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm text-white/50">Límite superior</label>
-                <input type="number" step="any" value={warnHigh} onChange={(e) => setWarnHigh(e.target.value)}
-                  placeholder="ej. -15" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-white/25 focus:border-cyan-400/40 focus:outline-none" />
-              </div>
-            </div>
-          )}
         </div>
 
         {error && (
@@ -275,111 +262,179 @@ function ConfigureStep({ parsed, token, onBack, onAnalyze }: {
 
 // ─── Step 3: Results ─────────────────────────────────────────────────────────
 
-function ResultsStep({ result, resolution, warnLow, warnHigh, sensorCol, onReset, onSaved }: {
+function DriftSection({ segments }: { segments: DriftSegment[] }) {
+  if (segments.length === 0) return null;
+  return (
+    <div className="rounded-[2rem] border border-white/10 bg-white/3 p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-orange-300" />
+        <p className="text-sm font-medium text-white/80">{segments.length} tramo{segments.length > 1 ? 's' : ''} de deriva detectado{segments.length > 1 ? 's' : ''}</p>
+      </div>
+      <div className="space-y-3">
+        {segments.map((seg, i) => (
+          <div key={i} className={`rounded-2xl border p-4 ${seg.direction === 'up' ? 'border-orange-400/20 bg-orange-400/5' : 'border-sky-400/20 bg-sky-400/5'}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {seg.direction === 'up'
+                  ? <TrendingUp className="h-4 w-4 text-orange-300" />
+                  : <TrendingDown className="h-4 w-4 text-sky-300" />}
+                <span className={`text-sm font-medium ${seg.direction === 'up' ? 'text-orange-200' : 'text-sky-200'}`}>
+                  Deriva {seg.direction === 'up' ? 'al alza' : 'a la baja'} — {seg.blockCount} bloques consecutivos
+                </span>
+              </div>
+              <span className="shrink-0 text-sm font-semibold text-white/70">
+                {seg.direction === 'up' ? '+' : '-'}{round2(seg.totalDrift)}
+              </span>
+            </div>
+            <div className="mt-2 flex gap-4 text-xs text-white/40">
+              <span>De {round2(seg.startMean)} → {round2(seg.endMean)}</span>
+              <span className="truncate">{seg.startTimestamp}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimePatternsSection({ patterns }: { patterns: TimePattern[] }) {
+  if (patterns.length === 0) return null;
+  const maxSig = Math.max(...patterns.map((p) => p.significance));
+
+  return (
+    <div className="rounded-[2rem] border border-amber-400/20 bg-amber-400/5 p-5">
+      <div className="mb-2 flex items-center gap-2">
+        <Clock className="h-4 w-4 text-amber-300" />
+        <p className="text-sm font-medium text-amber-200">Patrones temporales detectados</p>
+      </div>
+      <p className="mb-5 text-xs text-white/45">
+        Estas franjas horarias concentran más anomalías de lo esperado. Puede indicar una causa externa recurrente.
+      </p>
+      <div className="space-y-3">
+        {patterns.map((p) => (
+          <div key={p.hour} className="flex items-center gap-4">
+            <span className="w-16 shrink-0 text-right text-sm font-mono text-white/60">
+              {pad2(p.hour)}:00 – {pad2((p.hour + 1) % 24)}:00
+            </span>
+            <div className="relative flex-1 rounded-full bg-white/8 h-6 overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-amber-400/60"
+                style={{ width: `${(p.significance / maxSig) * 100}%` }}
+              />
+              <span className="absolute inset-0 flex items-center px-3 text-xs text-white/70">
+                {p.anomalyCount} anomalías · {p.significance.toFixed(1)}× la media
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-xs text-white/35">
+        Compara estos horarios con turnos, pausas o procesos externos que puedan influir en el sensor.
+      </p>
+    </div>
+  );
+}
+
+function ResultsStep({ result, cfg, onReset, onSaved }: {
   result: SensorAnalysisResult;
-  resolution: ResolutionLevel;
-  warnLow?: number;
-  warnHigh?: number;
-  sensorCol: string;
+  cfg: Cfg;
   onReset: () => void;
   onSaved: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const criticalCount = result.anomalies.filter((a) => a.type === 'above_warn' || a.type === 'below_warn' || a.type === 'statistical_high' || a.type === 'statistical_low').length;
-  const trendCount = result.anomalies.filter((a) => a.type === 'approaching_high' || a.type === 'approaching_low').length;
-  const displayed = showAll ? result.anomalies : result.anomalies.slice(0, 10);
+  const criticalCount = result.anomalies.filter(
+    (a) => a.type === 'above_warn' || a.type === 'below_warn' || a.type === 'statistical_high' || a.type === 'statistical_low',
+  ).length;
 
-  const maxMean = Math.max(...result.compressedBlocks.map((b) => b.mean), ...(warnHigh !== undefined ? [warnHigh * 1.05] : []));
-  const minMean = Math.min(...result.compressedBlocks.map((b) => b.mean), ...(warnLow !== undefined ? [warnLow * (warnLow < 0 ? 1.05 : 0.95)] : []));
+  const displayed = showAll ? result.anomalies : result.anomalies.slice(0, 8);
+
+  const maxMean = Math.max(...result.compressedBlocks.map((b) => b.mean), cfg.warnHigh * 1.05);
+  const minMean = Math.min(...result.compressedBlocks.map((b) => b.mean), cfg.warnLow < 0 ? cfg.warnLow * 1.05 : cfg.warnLow * 0.95);
   const chartRange = maxMean - minMean || 1;
 
   function barColor(mean: number) {
-    if (warnHigh !== undefined && mean > warnHigh) return 'bg-rose-400/80';
-    if (warnLow !== undefined && mean < warnLow) return 'bg-rose-400/80';
-    if (warnHigh !== undefined && warnLow !== undefined) {
-      const margin = (warnHigh - warnLow) * 0.2;
-      if (mean > warnHigh - margin || mean < warnLow + margin) return 'bg-amber-400/80';
-    }
-    const globalMargin = (maxMean - minMean) * 0.15;
-    if (mean > maxMean - globalMargin || mean < minMean + globalMargin) return 'bg-amber-400/50';
+    if (mean > cfg.warnHigh || mean < cfg.warnLow) return 'bg-rose-400/80';
+    const margin = (cfg.warnHigh - cfg.warnLow) * 0.15;
+    if (mean > cfg.warnHigh - margin || mean < cfg.warnLow + margin) return 'bg-amber-400/70';
     return 'bg-cyan-300/70';
   }
-
-  function barHeight(v: number) { return Math.max(4, ((v - minMean) / chartRange) * 100); }
+  function barH(v: number) { return Math.max(4, ((v - minMean) / chartRange) * 100); }
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Resultados</h2>
-          <p className="mt-1 text-white/50 text-sm">
-            <span className="text-cyan-300">{sensorCol}</span> · {result.totalPoints.toLocaleString()} puntos · Resolución {resolutionConfig[resolution].label}
-            {warnHigh !== undefined && <span className="ml-2 text-white/35">· Umbrales [{warnLow}, {warnHigh}]</span>}
+          <p className="mt-1 text-xs text-white/40">
+            {cfg.sensorCol} · {result.totalPoints.toLocaleString()} puntos · Resolución {resolutionConfig[cfg.resolution].label} · Rango [{cfg.warnLow}, {cfg.warnHigh}]
           </p>
         </div>
         <div className="flex gap-2">
-          {!saved && (
+          {!saved ? (
             <button type="button" onClick={() => { setSaved(true); onSaved(); }}
               className="shrink-0 rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:brightness-110">
               Guardar demo
             </button>
+          ) : (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-300"><CheckCircle className="h-4 w-4" /> Guardada</span>
           )}
-          {saved && <span className="flex items-center gap-1.5 text-sm text-emerald-300"><CheckCircle className="h-4 w-4" /> Guardada</span>}
           <button type="button" onClick={onReset} className="shrink-0 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:bg-white/5">
             Nueva demo
           </button>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPIs */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Puntos analizados', value: result.totalPoints.toLocaleString(), tone: 'neutral' },
-          { label: 'Anomalías críticas', value: String(criticalCount), tone: criticalCount > 0 ? 'danger' : 'ok' },
-          { label: 'Tendencias', value: String(trendCount), tone: trendCount > 0 ? 'warn' : 'ok' },
-          { label: 'Media global', value: round2(result.overallMean).toString(), tone: 'neutral' },
-        ].map((kpi) => {
-          const toneClass = { neutral: 'border-white/10 bg-white/4', danger: 'border-rose-400/20 bg-rose-400/8', warn: 'border-amber-400/20 bg-amber-400/8', ok: 'border-emerald-400/20 bg-emerald-400/8' }[kpi.tone];
-          const valClass = { neutral: 'text-white', danger: 'text-rose-200', warn: 'text-amber-200', ok: 'text-emerald-200' }[kpi.tone];
+          { label: 'Puntos analizados', value: result.totalPoints.toLocaleString(), t: 'neutral' },
+          { label: 'Anomalías críticas', value: String(criticalCount), t: criticalCount > 0 ? 'danger' : 'ok' },
+          { label: 'Tramos de deriva', value: String(result.driftSegments.length), t: result.driftSegments.length > 0 ? 'warn' : 'ok' },
+          { label: 'Patrones horarios', value: String(result.timePatterns.length), t: result.timePatterns.length > 0 ? 'warn' : 'ok' },
+        ].map((k) => {
+          const tc = { neutral: 'border-white/10 bg-white/4', danger: 'border-rose-400/20 bg-rose-400/8', warn: 'border-amber-400/20 bg-amber-400/8', ok: 'border-emerald-400/20 bg-emerald-400/8' }[k.t];
+          const vc = { neutral: 'text-white', danger: 'text-rose-200', warn: 'text-amber-200', ok: 'text-emerald-200' }[k.t];
           return (
-            <div key={kpi.label} className={`rounded-3xl border p-4 ${toneClass}`}>
-              <p className="text-xs text-white/45">{kpi.label}</p>
-              <p className={`mt-2 text-2xl font-semibold ${valClass}`}>{kpi.value}</p>
+            <div key={k.label} className={`rounded-3xl border p-4 ${tc}`}>
+              <p className="text-xs text-white/45">{k.label}</p>
+              <p className={`mt-2 text-2xl font-semibold ${vc}`}>{k.value}</p>
             </div>
           );
         })}
       </div>
 
-      {/* Chart */}
+      {/* Compressed chart */}
       <div className="rounded-[2rem] border border-white/10 bg-white/3 p-5">
-        <p className="mb-1 text-sm font-medium text-white/70">Vista comprimida</p>
-        <p className="mb-4 text-xs text-white/35">{result.compressedBlocks.length} bloques · cada barra = media de hasta 10 puntos</p>
-        <div className="relative h-36 rounded-2xl bg-[linear-gradient(180deg,rgba(34,211,238,0.04),transparent)] p-3">
-          {warnHigh !== undefined && (
-            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-rose-400/40" style={{ bottom: `${barHeight(warnHigh)}%` }}>
-              <span className="absolute right-0 -top-4 text-[10px] text-rose-300/60">↑ {warnHigh}</span>
-            </div>
-          )}
-          {warnLow !== undefined && (
-            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-amber-400/40" style={{ bottom: `${barHeight(warnLow)}%` }}>
-              <span className="absolute right-0 text-[10px] text-amber-300/60">↓ {warnLow}</span>
-            </div>
-          )}
+        <p className="mb-1 text-sm font-medium text-white/70">Vista comprimida — {result.compressedBlocks.length} bloques</p>
+        <div className="relative mt-4 h-36 rounded-2xl bg-[linear-gradient(180deg,rgba(34,211,238,0.04),transparent)] p-3">
+          <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-rose-400/40" style={{ bottom: `${barH(cfg.warnHigh)}%` }}>
+            <span className="absolute right-0 -top-4 text-[10px] text-rose-300/60">↑ {cfg.warnHigh}</span>
+          </div>
+          <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-amber-400/40" style={{ bottom: `${barH(cfg.warnLow)}%` }}>
+            <span className="absolute right-0 text-[10px] text-amber-300/60">↓ {cfg.warnLow}</span>
+          </div>
           <div className="flex h-full items-end gap-px overflow-hidden">
             {result.compressedBlocks.map((b, i) => (
               <div key={i} title={`Bloque ${i + 1}: ${round2(b.mean)}`}
-                className={`flex-1 rounded-t-sm transition-all ${barColor(b.mean)}`}
-                style={{ height: `${barHeight(b.mean)}%` }} />
+                className={`flex-1 rounded-t-sm ${barColor(b.mean)}`}
+                style={{ height: `${barH(b.mean)}%` }} />
             ))}
           </div>
         </div>
         <div className="mt-2 flex gap-4 text-[11px] text-white/35">
-          <span><span className="inline-block h-2 w-2 rounded-sm bg-cyan-300/70 mr-1" />Normal</span>
-          <span><span className="inline-block h-2 w-2 rounded-sm bg-amber-400/80 mr-1" />Tendencia</span>
-          <span><span className="inline-block h-2 w-2 rounded-sm bg-rose-400/80 mr-1" />Anomalía</span>
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-cyan-300/70" />Normal</span>
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-amber-400/70" />Tendencia</span>
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-rose-400/80" />Anomalía</span>
         </div>
       </div>
+
+      {/* Drift segments */}
+      <DriftSection segments={result.driftSegments} />
+
+      {/* Time patterns */}
+      <TimePatternsSection patterns={result.timePatterns} />
 
       {/* Anomaly list */}
       {result.anomalies.length > 0 ? (
@@ -402,24 +457,24 @@ function ResultsStep({ result, resolution, warnLow, warnHigh, sensorCol, onReset
                     <p className="mt-1 text-sm font-medium">Valor: {round2(a.value)}</p>
                     <p className="text-xs text-white/40">{a.timestamp}</p>
                     {a.comparedToMean !== null && (
-                      <p className="text-xs text-white/30">Media: {round2(a.comparedToMean)} · Desviación: {round2(a.deviation)}</p>
+                      <p className="text-xs text-white/30">Media referencia: {round2(a.comparedToMean)} · Desviación: {round2(a.deviation)}</p>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-          {result.anomalies.length > 10 && (
+          {result.anomalies.length > 8 && (
             <button type="button" onClick={() => setShowAll((v) => !v)}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 py-2 text-sm text-white/50 hover:bg-white/5">
-              {showAll ? <><ChevronUp className="h-4 w-4" /> Mostrar menos</> : <>Ver {result.anomalies.length - 10} eventos más</>}
+              {showAll ? <><ChevronUp className="h-4 w-4" /> Mostrar menos</> : <>Ver {result.anomalies.length - 8} eventos más</>}
             </button>
           )}
         </div>
       ) : (
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-emerald-200">
           <CheckCircle className="h-4 w-4 shrink-0" />
-          Sin anomalías detectadas. Todos los datos están dentro de los parámetros configurados.
+          Sin anomalías detectadas dentro del rango configurado.
         </div>
       )}
     </div>
@@ -433,7 +488,7 @@ export function SensorDemoShell({ session, clientId, clientName, onSaved }: Sens
   const [parsed, setParsed] = useState<SensorParseResponseDto | null>(null);
   const [result, setResult] = useState<SensorAnalysisResult | null>(null);
   const [fileName, setFileName] = useState('');
-  const [cfg, setCfg] = useState<{ resolution: ResolutionLevel; warnLow?: number; warnHigh?: number; sensorCol: string; tsCol: string } | null>(null);
+  const [cfg, setCfg] = useState<Cfg | null>(null);
 
   const stepLabels = [
     { key: 'upload' as Step, label: '1. Archivo' },
@@ -462,11 +517,8 @@ export function SensorDemoShell({ session, clientId, clientName, onSaved }: Sens
 
   return (
     <div>
-      {/* Client badge + step indicator */}
       <div className="mx-auto mb-8 max-w-5xl flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm text-white/50">
-          <span className="rounded-full border border-white/10 px-3 py-1">{clientName}</span>
-        </div>
+        <span className="rounded-full border border-white/10 px-3 py-1 text-sm text-white/45">{clientName}</span>
         <div className="flex items-center gap-2">
           {stepLabels.map((s, i) => (
             <div key={s.key} className="flex items-center gap-2">
@@ -485,7 +537,7 @@ export function SensorDemoShell({ session, clientId, clientName, onSaved }: Sens
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-blue-500/4 to-fuchsia-500/8 blur-3xl" />
           <div className="relative">
             {step === 'upload' && (
-              <UploadStep token={session.accessToken} fileName={fileName} setFileName={setFileName}
+              <UploadStep token={session.accessToken} setFileName={setFileName}
                 onParsed={(p) => { setParsed(p); setStep('configure'); }} />
             )}
             {step === 'configure' && parsed && (
@@ -493,8 +545,7 @@ export function SensorDemoShell({ session, clientId, clientName, onSaved }: Sens
                 onAnalyze={(r, c) => { setResult(r); setCfg(c); setStep('results'); }} />
             )}
             {step === 'results' && result && cfg && (
-              <ResultsStep result={result} resolution={cfg.resolution} warnLow={cfg.warnLow} warnHigh={cfg.warnHigh}
-                sensorCol={cfg.sensorCol} onSaved={handleSaved}
+              <ResultsStep result={result} cfg={cfg} onSaved={handleSaved}
                 onReset={() => { setParsed(null); setResult(null); setCfg(null); setFileName(''); setStep('upload'); }} />
             )}
           </div>

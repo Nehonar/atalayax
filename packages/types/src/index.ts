@@ -88,32 +88,40 @@ export type AnomalyEventType =
   | 'approaching_high'
   | 'approaching_low'
   | 'statistical_high'
-  | 'statistical_low';
+  | 'statistical_low'
+  | 'drift_up'
+  | 'drift_down';
+
+export type DriftSegment = {
+  startTimestamp: string;
+  endTimestamp: string;
+  direction: 'up' | 'down';
+  blockCount: number;
+  startMean: number;
+  endMean: number;
+  totalDrift: number;
+};
+
+export type TimePattern = {
+  hour: number;
+  anomalyCount: number;
+  totalPoints: number;
+  rate: number;
+  significance: number;
+};
+
+export type SensorAnalysisResult = {
+  totalPoints: number;
+  anomalies: AnomalyEvent[];
+  compressedBlocks: CompressedBlock[];
+  driftSegments: DriftSegment[];
+  timePatterns: TimePattern[];
+  overallMean: number;
+  minValue: number;
+  maxValue: number;
+};
 
 export type ResolutionLevel = 1 | 2 | 3;
-
-export type DemoClient = {
-  id: string;
-  name: string;
-  sector: 'industria' | 'logistica' | 'otro';
-  createdAt: string;
-};
-
-export type DemoRecord = {
-  id: string;
-  clientId: string;
-  createdAt: string;
-  fileName: string;
-  sensorColumn: string;
-  timestampColumn: string;
-  resolution: ResolutionLevel;
-  warnLow?: number;
-  warnHigh?: number;
-  totalPoints: number;
-  anomalyCount: number;
-  overallMean: number;
-  result: SensorAnalysisResult;
-};
 
 export type AnomalyEvent = {
   timestamp: string;
@@ -133,13 +141,27 @@ export type CompressedBlock = {
   blockIndex: number;
 };
 
-export type SensorAnalysisResult = {
+export type DemoClient = {
+  id: string;
+  name: string;
+  sector: 'industria' | 'logistica' | 'otro';
+  createdAt: string;
+};
+
+export type DemoRecord = {
+  id: string;
+  clientId: string;
+  createdAt: string;
+  fileName: string;
+  sensorColumn: string;
+  timestampColumn: string;
+  resolution: ResolutionLevel;
+  warnLow: number;
+  warnHigh: number;
   totalPoints: number;
-  anomalies: AnomalyEvent[];
-  compressedBlocks: CompressedBlock[];
+  anomalyCount: number;
   overallMean: number;
-  minValue: number;
-  maxValue: number;
+  result: SensorAnalysisResult;
 };
 
 export type SensorParseResponseDto = {
@@ -154,6 +176,6 @@ export type SensorAnalyzeRequestDto = {
   timestampColumn: string;
   sensorColumn: string;
   resolution: ResolutionLevel;
-  warnLow?: number;
-  warnHigh?: number;
+  warnLow: number;
+  warnHigh: number;
 };

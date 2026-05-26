@@ -77,8 +77,8 @@ export class SensorDemoService {
     timestampColumn: string;
     sensorColumn: string;
     resolution: ResolutionLevel;
-    warnLow?: number;
-    warnHigh?: number;
+    warnLow: number;
+    warnHigh: number;
   }): SensorAnalysisResult {
     const stored = fileStore.get(params.fileId);
     if (!stored) {
@@ -100,11 +100,9 @@ export class SensorDemoService {
       throw new Error('No se encontraron datos numéricos válidos en la columna seleccionada.');
     }
 
-    const thresholds =
-      params.warnLow !== undefined && params.warnHigh !== undefined
-        ? { warnLow: params.warnLow, warnHigh: params.warnHigh }
-        : undefined;
-
-    return analyzeDataPoints(dataPoints, params.resolution, thresholds);
+    return analyzeDataPoints(dataPoints, params.resolution, {
+      warnLow: params.warnLow,
+      warnHigh: params.warnHigh,
+    });
   }
 }
