@@ -7,6 +7,7 @@ import {
   CheckCircle,
   ChevronUp,
   Clock,
+  FileDown,
   Loader2,
   TrendingDown,
   TrendingUp,
@@ -23,7 +24,8 @@ import type {
   TimePattern,
 } from '@atalayax/types';
 import { analyzeSensorData, uploadSensorFile } from '../lib/api';
-import { saveDemo } from '../lib/demo-store';
+import { getClient, saveDemo } from '../lib/demo-store';
+import { openReport } from '../lib/report';
 
 type Step = 'upload' | 'configure' | 'results';
 type Cfg = { resolution: ResolutionLevel; warnLow: number; warnHigh: number; sensorCol: string; tsCol: string };
@@ -460,19 +462,36 @@ function ResultsContent({ result, cfg }: { result: SensorAnalysisResult; cfg: Cf
   );
 }
 
-function ResultsStep({ result, cfg, onReset, onSaved }: {
+function ResultsStep({ result, cfg, clientName, fileName, onReset, onSaved }: {
   result: SensorAnalysisResult;
   cfg: Cfg;
+  clientName: string;
+  fileName: string;
   onReset: () => void;
   onSaved: () => void;
 }) {
   const [saved, setSaved] = useState(false);
 
+  function handleDownload() {
+    const tempRecord = {
+      id: '', clientId: '', createdAt: new Date().toISOString(),
+      fileName, sensorColumn: cfg.sensorCol, timestampColumn: cfg.tsCol,
+      resolution: cfg.resolution, warnLow: cfg.warnLow, warnHigh: cfg.warnHigh,
+      totalPoints: result.totalPoints, anomalyCount: result.anomalies.length,
+      overallMean: result.overallMean, result,
+    };
+    openReport(tempRecord, clientName);
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-2xl font-semibold tracking-tight">Resultados</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={handleDownload}
+            className="inline-flex items-center gap-1.5 shrink-0 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:bg-white/5">
+            <FileDown className="h-3.5 w-3.5" /> Informe
+          </button>
           {!saved ? (
             <button type="button" onClick={() => { setSaved(true); onSaved(); }}
               className="shrink-0 rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:brightness-110">
@@ -501,6 +520,7 @@ export function SavedDemoResultsView({ demo, onBack }: { demo: DemoRecord; onBac
     sensorCol: demo.sensorColumn,
     tsCol: demo.timestampColumn,
   };
+  const clientName = getClient(demo.clientId)?.name ?? '';
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -508,11 +528,20 @@ export function SavedDemoResultsView({ demo, onBack }: { demo: DemoRecord; onBac
         <button type="button" onClick={onBack} className="text-sm text-white/40 hover:text-white/70">
           ← Volver al cliente
         </button>
-        <div className="text-right">
-          <p className="font-medium text-white/90 truncate max-w-xs">{demo.fileName}</p>
-          <p className="text-xs text-white/40 mt-0.5">
-            {new Date(demo.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openReport(demo, clientName)}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:bg-white/5 transition"
+          >
+            <FileDown className="h-3.5 w-3.5" /> Informe
+          </button>
+          <div className="text-right">
+            <p className="font-medium text-white/90 truncate max-w-xs">{demo.fileName}</p>
+            <p className="text-xs text-white/40 mt-0.5">
+              {new Date(demo.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
         </div>
       </div>
       <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/4 p-6 shadow-2xl backdrop-blur sm:p-8">
@@ -590,7 +619,8 @@ export function SensorDemoShell({ session, clientId, clientName, onSaved }: Sens
                 onAnalyze={(r, c) => { setResult(r); setCfg(c); setStep('results'); }} />
             )}
             {step === 'results' && result && cfg && (
-              <ResultsStep result={result} cfg={cfg} onSaved={handleSaved}
+              <ResultsStep result={result} cfg={cfg} clientName={clientName} fileName={fileName}
+                onSaved={handleSaved}
                 onReset={() => { setParsed(null); setResult(null); setCfg(null); setFileName(''); setStep('upload'); }} />
             )}
           </div>
