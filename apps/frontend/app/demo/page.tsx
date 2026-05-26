@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { AuthSessionDto } from '@atalayax/types';
 import { AppShell } from '../../components/ui-shell';
 import { ClientList, ClientDetail } from '../../components/demo-clients-shell';
-import { SensorDemoShell } from '../../components/sensor-demo-shell';
+import { SavedDemoResultsView, SensorDemoShell } from '../../components/sensor-demo-shell';
 import { readSession } from '../../lib/auth';
 import { getClient, getDemo } from '../../lib/demo-store';
 
@@ -83,25 +83,11 @@ export default function DemoPage() {
         {screen.view === 'demo-result' && (() => {
           const demo = getDemo(screen.demoId);
           if (!demo) return <p className="text-white/40">Demo no encontrada.</p>;
-          // Re-render results directly from stored record
           return (
-            <div className="mx-auto max-w-5xl">
-              <button type="button" onClick={() => setScreen({ view: 'client', clientId: screen.clientId })}
-                className="mb-6 text-sm text-white/40 hover:text-white/70">
-                ← Volver a {clientName}
-              </button>
-              <div className="rounded-[2rem] border border-white/10 bg-white/4 p-6 sm:p-8">
-                <p className="text-sm text-white/40 mb-1">{new Date(demo.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                <h2 className="text-2xl font-semibold">{demo.fileName}</h2>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/40">
-                  <span className="rounded-full border border-white/10 px-2 py-1">{demo.sensorColumn}</span>
-                  <span className="rounded-full border border-white/10 px-2 py-1">{demo.totalPoints.toLocaleString()} puntos</span>
-                  <span className="rounded-full border border-white/10 px-2 py-1">{demo.anomalyCount} anomalías</span>
-                  <span className="rounded-full border border-white/10 px-2 py-1">Resolución {demo.resolution}</span>
-                  {demo.warnLow !== undefined && <span className="rounded-full border border-white/10 px-2 py-1">Umbrales [{demo.warnLow}, {demo.warnHigh}]</span>}
-                </div>
-              </div>
-            </div>
+            <SavedDemoResultsView
+              demo={demo}
+              onBack={() => setScreen({ view: 'client', clientId: screen.clientId })}
+            />
           );
         })()}
       </section>

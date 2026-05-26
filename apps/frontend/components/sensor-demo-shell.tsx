@@ -15,6 +15,7 @@ import {
 import type {
   AnomalyEvent,
   AuthSessionDto,
+  DemoRecord,
   DriftSegment,
   ResolutionLevel,
   SensorAnalysisResult,
@@ -335,14 +336,10 @@ function TimePatternsSection({ patterns }: { patterns: TimePattern[] }) {
   );
 }
 
-function ResultsStep({ result, cfg, onReset, onSaved }: {
-  result: SensorAnalysisResult;
-  cfg: Cfg;
-  onReset: () => void;
-  onSaved: () => void;
-}) {
+// ─── Shared results content (used both inline and for saved demo view) ────────
+
+function ResultsContent({ result, cfg }: { result: SensorAnalysisResult; cfg: Cfg }) {
   const [showAll, setShowAll] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const criticalCount = result.anomalies.filter(
     (a) => a.type === 'above_warn' || a.type === 'below_warn' || a.type === 'statistical_high' || a.type === 'statistical_low',
@@ -363,28 +360,10 @@ function ResultsStep({ result, cfg, onReset, onSaved }: {
   function barH(v: number) { return Math.max(4, ((v - minMean) / chartRange) * 100); }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Resultados</h2>
-          <p className="mt-1 text-xs text-white/40">
-            {cfg.sensorCol} · {result.totalPoints.toLocaleString()} puntos · Resolución {resolutionConfig[cfg.resolution].label} · Rango [{cfg.warnLow}, {cfg.warnHigh}]
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {!saved ? (
-            <button type="button" onClick={() => { setSaved(true); onSaved(); }}
-              className="shrink-0 rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:brightness-110">
-              Guardar demo
-            </button>
-          ) : (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-300"><CheckCircle className="h-4 w-4" /> Guardada</span>
-          )}
-          <button type="button" onClick={onReset} className="shrink-0 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:bg-white/5">
-            Nueva demo
-          </button>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <p className="text-xs text-white/40">
+        {cfg.sensorCol} · {result.totalPoints.toLocaleString()} puntos · Resolución {resolutionConfig[cfg.resolution].label} · Rango [{cfg.warnLow}, {cfg.warnHigh}]
+      </p>
 
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
@@ -477,6 +456,72 @@ function ResultsStep({ result, cfg, onReset, onSaved }: {
           Sin anomalías detectadas dentro del rango configurado.
         </div>
       )}
+    </div>
+  );
+}
+
+function ResultsStep({ result, cfg, onReset, onSaved }: {
+  result: SensorAnalysisResult;
+  cfg: Cfg;
+  onReset: () => void;
+  onSaved: () => void;
+}) {
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <h2 className="text-2xl font-semibold tracking-tight">Resultados</h2>
+        <div className="flex gap-2">
+          {!saved ? (
+            <button type="button" onClick={() => { setSaved(true); onSaved(); }}
+              className="shrink-0 rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:brightness-110">
+              Guardar demo
+            </button>
+          ) : (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-300"><CheckCircle className="h-4 w-4" /> Guardada</span>
+          )}
+          <button type="button" onClick={onReset} className="shrink-0 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:bg-white/5">
+            Nueva demo
+          </button>
+        </div>
+      </div>
+      <ResultsContent result={result} cfg={cfg} />
+    </div>
+  );
+}
+
+// ─── Exported view for saved demos ───────────────────────────────────────────
+
+export function SavedDemoResultsView({ demo, onBack }: { demo: DemoRecord; onBack: () => void }) {
+  const cfg: Cfg = {
+    resolution: demo.resolution,
+    warnLow: demo.warnLow,
+    warnHigh: demo.warnHigh,
+    sensorCol: demo.sensorColumn,
+    tsCol: demo.timestampColumn,
+  };
+
+  return (
+    <div className="mx-auto max-w-5xl">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <button type="button" onClick={onBack} className="text-sm text-white/40 hover:text-white/70">
+          ← Volver al cliente
+        </button>
+        <div className="text-right">
+          <p className="font-medium text-white/90 truncate max-w-xs">{demo.fileName}</p>
+          <p className="text-xs text-white/40 mt-0.5">
+            {new Date(demo.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+      </div>
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/4 p-6 shadow-2xl backdrop-blur sm:p-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-blue-500/4 to-fuchsia-500/8 blur-3xl" />
+        <div className="relative">
+          <h2 className="mb-4 text-2xl font-semibold tracking-tight">Resultados guardados</h2>
+          <ResultsContent result={demo.result} cfg={cfg} />
+        </div>
+      </div>
     </div>
   );
 }
