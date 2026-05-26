@@ -14,9 +14,9 @@ export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arqui
   const isLight = variant === 'light';
 
   return (
-    <main className={isLight ? 'min-h-screen bg-slate-50 text-slate-900' : 'min-h-screen bg-neutral-950 text-white'}>
+    <main className={isLight ? 'min-h-screen bg-zinc-100 text-zinc-900' : 'min-h-screen bg-neutral-950 text-white'}>
       <section className={isLight
-        ? 'border-b border-slate-200 bg-white'
+        ? 'border-b border-zinc-200 bg-white shadow-sm'
         : 'border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(6,182,212,0.18),transparent_35%),radial-gradient(circle_at_right,rgba(59,130,246,0.14),transparent_28%),linear-gradient(to_bottom,#0a0a0a,#0a0a0a)]'
       }>
         <div className="mx-auto max-w-7xl px-6 py-5">
@@ -26,16 +26,16 @@ export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arqui
                 <Activity className={`h-5 w-5 ${isLight ? 'text-cyan-600' : 'text-cyan-300'}`} />
               </div>
               <div>
-                <p className={`text-lg font-semibold tracking-tight ${isLight ? 'text-slate-900' : ''}`}>AtalayaX</p>
-                <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-white/45'}`}>Industrial data intelligence</p>
+                <p className={`text-lg font-semibold tracking-tight ${isLight ? 'text-zinc-900' : ''}`}>AtalayaX</p>
+                <p className={`text-sm ${isLight ? 'text-zinc-500' : 'text-white/45'}`}>Industrial data intelligence</p>
               </div>
             </Link>
 
-            <nav className={`flex flex-wrap gap-3 text-sm ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+            <nav className={`flex flex-wrap gap-3 text-sm ${isLight ? 'text-zinc-600' : 'text-white/60'}`}>
               {navItems.map((item) => {
                 if (typeof item === 'string') {
                   return (
-                    <span key={item} className={`rounded-full border px-4 py-2 ${isLight ? 'border-slate-200 text-slate-500' : 'border-white/10'}`}>
+                    <span key={item} className={`rounded-full border px-4 py-2 ${isLight ? 'border-zinc-200 text-zinc-500' : 'border-white/10'}`}>
                       {item}
                     </span>
                   );
