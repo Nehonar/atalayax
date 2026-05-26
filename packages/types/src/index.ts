@@ -82,7 +82,38 @@ export type ThresholdConfig = {
   warnHigh: number;
 };
 
-export type AnomalyEventType = 'above_warn' | 'below_warn' | 'approaching_high' | 'approaching_low';
+export type AnomalyEventType =
+  | 'above_warn'
+  | 'below_warn'
+  | 'approaching_high'
+  | 'approaching_low'
+  | 'statistical_high'
+  | 'statistical_low';
+
+export type ResolutionLevel = 1 | 2 | 3;
+
+export type DemoClient = {
+  id: string;
+  name: string;
+  sector: 'industria' | 'logistica' | 'otro';
+  createdAt: string;
+};
+
+export type DemoRecord = {
+  id: string;
+  clientId: string;
+  createdAt: string;
+  fileName: string;
+  sensorColumn: string;
+  timestampColumn: string;
+  resolution: ResolutionLevel;
+  warnLow?: number;
+  warnHigh?: number;
+  totalPoints: number;
+  anomalyCount: number;
+  overallMean: number;
+  result: SensorAnalysisResult;
+};
 
 export type AnomalyEvent = {
   timestamp: string;
@@ -122,6 +153,7 @@ export type SensorAnalyzeRequestDto = {
   fileId: string;
   timestampColumn: string;
   sensorColumn: string;
-  warnLow: number;
-  warnHigh: number;
+  resolution: ResolutionLevel;
+  warnLow?: number;
+  warnHigh?: number;
 };

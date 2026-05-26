@@ -1,4 +1,4 @@
-import type { AnomalyEvent, AnomalyEventType, CompressedBlock, SensorAnalysisResult, ThresholdConfig } from '@atalayax/types';
+import type { AnomalyEvent, AnomalyEventType, CompressedBlock, ResolutionLevel, SensorAnalysisResult, ThresholdConfig } from '@atalayax/types';
 
 type DataPoint = {
   timestamp: string;
@@ -6,28 +6,81 @@ type DataPoint = {
   index: number;
 };
 
+// K value per resolution level
+const K_BY_RESOLUTION: Record<ResolutionLevel, number> = { 1: 3, 2: 2, 3: 1 };
+
 type ProcessingState = {
   rawBuffer: DataPoint[];
   prevBlockMean: number | null;
   superMean: number | null;
   blockCount: number;
+  // Welford online algorithm — incremental mean + variance, no history stored
+  wN: number;
+  wMean: number;
+  wM2: number;
 };
 
 function createState(): ProcessingState {
-  return { rawBuffer: [], prevBlockMean: null, superMean: null, blockCount: 0 };
+  return { rawBuffer: [], prevBlockMean: null, superMean: null, blockCount: 0, wN: 0, wMean: 0, wM2: 0 };
 }
 
-function detectType(value: number, warnLow: number, warnHigh: number, approachMargin: number): AnomalyEventType | null {
-  if (value > warnHigh) return 'above_warn';
-  if (value < warnLow) return 'below_warn';
-  if (value > warnHigh - approachMargin) return 'approaching_high';
-  if (value < warnLow + approachMargin) return 'approaching_low';
-  return null;
+function updateWelford(state: ProcessingState, value: number): void {
+  state.wN++;
+  const delta = value - state.wMean;
+  state.wMean += delta / state.wN;
+  state.wM2 += delta * (value - state.wMean);
 }
 
-export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConfig): SensorAnalysisResult {
+function getStdDev(state: ProcessingState): number {
+  return state.wN < 2 ? 0 : Math.sqrt(state.wM2 / (state.wN - 1));
+}
+
+function detectTypes(
+  value: number,
+  thresholds: Partial<ThresholdConfig>,
+  approachMargin: number,
+  state: ProcessingState,
+  K: number,
+): AnomalyEventType[] {
+  const types: AnomalyEventType[] = [];
   const { warnLow, warnHigh } = thresholds;
-  const approachMargin = Math.max((warnHigh - warnLow) * 0.2, 0.001);
+
+  // Explicit threshold detection
+  if (warnHigh !== undefined) {
+    if (value > warnHigh) types.push('above_warn');
+    else if (value > warnHigh - approachMargin) types.push('approaching_high');
+  }
+  if (warnLow !== undefined) {
+    if (value < warnLow) types.push('below_warn');
+    else if (value < warnLow + approachMargin) types.push('approaching_low');
+  }
+
+  // Statistical detection via Welford (kicks in after enough data)
+  if (state.wN >= 10) {
+    const stdDev = getStdDev(state);
+    if (stdDev > 0) {
+      const zScore = Math.abs(value - state.wMean) / stdDev;
+      if (zScore > K && types.length === 0) {
+        types.push(value > state.wMean ? 'statistical_high' : 'statistical_low');
+      }
+    }
+  }
+
+  return types;
+}
+
+export function analyzeDataPoints(
+  points: DataPoint[],
+  resolution: ResolutionLevel,
+  thresholds?: Partial<ThresholdConfig>,
+): SensorAnalysisResult {
+  const K = K_BY_RESOLUTION[resolution];
+  const warnLow = thresholds?.warnLow;
+  const warnHigh = thresholds?.warnHigh;
+  const approachMargin =
+    warnLow !== undefined && warnHigh !== undefined
+      ? Math.max((warnHigh - warnLow) * 0.2, 0.001)
+      : 0;
 
   const state = createState();
   const anomalies: AnomalyEvent[] = [];
@@ -42,35 +95,37 @@ export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConf
     if (point.value < minValue) minValue = point.value;
     if (point.value > maxValue) maxValue = point.value;
 
-    const currentBufferMean =
+    const bufMean =
       state.rawBuffer.length > 0
         ? state.rawBuffer.reduce((s, p) => s + p.value, 0) / state.rawBuffer.length
         : null;
 
-    const type = detectType(point.value, warnLow, warnHigh, approachMargin);
+    const types = detectTypes(point.value, { warnLow, warnHigh }, approachMargin, state, K);
 
-    if (type !== null) {
-      const deviation =
-        type === 'above_warn' || type === 'approaching_high'
-          ? point.value - warnHigh
-          : warnLow - point.value;
+    for (const type of types) {
+      const refValue = warnHigh !== undefined && (type === 'above_warn' || type === 'approaching_high')
+        ? warnHigh
+        : warnLow !== undefined && (type === 'below_warn' || type === 'approaching_low')
+          ? warnLow
+          : state.wMean;
 
       anomalies.push({
         timestamp: point.timestamp,
         value: point.value,
         index: point.index,
         type,
-        comparedToMean: currentBufferMean ?? state.prevBlockMean,
+        comparedToMean: bufMean ?? state.prevBlockMean,
         comparedToPrevBlock: state.prevBlockMean,
-        deviation: Math.abs(deviation),
+        deviation: Math.abs(point.value - refValue),
       });
+      break; // one anomaly per point, most specific first
     }
 
+    updateWelford(state, point.value);
     state.rawBuffer.push(point);
 
     if (state.rawBuffer.length === 10) {
       const blockMean = state.rawBuffer.reduce((s, p) => s + p.value, 0) / 10;
-
       compressedBlocks.push({
         mean: blockMean,
         count: 10,
@@ -78,14 +133,12 @@ export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConf
         endTimestamp: state.rawBuffer[9].timestamp,
         blockIndex: state.blockCount,
       });
-
       state.prevBlockMean = blockMean;
       state.blockCount++;
       state.superMean =
         state.superMean === null
           ? blockMean
           : (state.superMean * (state.blockCount - 1) + blockMean) / state.blockCount;
-
       state.rawBuffer = [];
     }
   }

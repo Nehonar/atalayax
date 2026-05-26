@@ -77,7 +77,10 @@ export async function uploadSensorFile(file: File, token: string): Promise<Senso
   return response.json() as Promise<SensorParseResponseDto>;
 }
 
-export async function analyzeSensorData(payload: SensorAnalyzeRequestDto, token: string): Promise<SensorAnalysisResult> {
+export async function analyzeSensorData(
+  payload: SensorAnalyzeRequestDto,
+  token: string,
+): Promise<SensorAnalysisResult> {
   const response = await fetch(`${API_URL}/sensor-demo/analyze`, {
     method: 'POST',
     headers: {

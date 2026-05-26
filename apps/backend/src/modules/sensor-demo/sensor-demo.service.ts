@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { randomUUID } from 'crypto';
 import type { SensorAnalysisResult, SensorColumn, SensorParseResponseDto } from '@atalayax/types';
+import type { ResolutionLevel } from '@atalayax/types';
 import { analyzeDataPoints } from './sensor-demo.compression.js';
 
 type StoredFile = {
@@ -75,8 +76,9 @@ export class SensorDemoService {
     fileId: string;
     timestampColumn: string;
     sensorColumn: string;
-    warnLow: number;
-    warnHigh: number;
+    resolution: ResolutionLevel;
+    warnLow?: number;
+    warnHigh?: number;
   }): SensorAnalysisResult {
     const stored = fileStore.get(params.fileId);
     if (!stored) {
@@ -98,9 +100,11 @@ export class SensorDemoService {
       throw new Error('No se encontraron datos numéricos válidos en la columna seleccionada.');
     }
 
-    return analyzeDataPoints(dataPoints, {
-      warnLow: params.warnLow,
-      warnHigh: params.warnHigh,
-    });
+    const thresholds =
+      params.warnLow !== undefined && params.warnHigh !== undefined
+        ? { warnLow: params.warnLow, warnHigh: params.warnHigh }
+        : undefined;
+
+    return analyzeDataPoints(dataPoints, params.resolution, thresholds);
   }
 }

@@ -13,11 +13,13 @@ const analyzeBodySchema = z.object({
   fileId: z.string().uuid(),
   timestampColumn: z.string().min(1),
   sensorColumn: z.string().min(1),
-  warnLow: z.coerce.number().finite(),
-  warnHigh: z.coerce.number().finite(),
-}).refine((d) => d.warnLow < d.warnHigh, {
-  message: 'warnLow debe ser menor que warnHigh',
-});
+  resolution: z.coerce.number().int().min(1).max(3) as z.ZodType<1 | 2 | 3>,
+  warnLow: z.coerce.number().finite().optional(),
+  warnHigh: z.coerce.number().finite().optional(),
+}).refine((d) => {
+  if (d.warnLow !== undefined && d.warnHigh !== undefined) return d.warnLow < d.warnHigh;
+  return true;
+}, { message: 'warnLow debe ser menor que warnHigh' });
 
 function requireDemoAuth(authHeader: string | undefined): boolean {
   return typeof authHeader === 'string' && authHeader.startsWith('Bearer demo-token-');
