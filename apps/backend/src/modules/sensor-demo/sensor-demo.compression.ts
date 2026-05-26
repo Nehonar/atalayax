@@ -6,16 +6,14 @@ type DataPoint = {
   index: number;
 };
 
-// Compression state kept in memory during analysis.
-// At any time: max 10 raw points + 1 prev-block mean + 1 super mean = 12 comparison units.
-type CompressionState = {
+type ProcessingState = {
   rawBuffer: DataPoint[];
-  prevBlockMean: number | null;  // mean of the last completed 10-point block
-  superMean: number | null;      // running mean of all completed blocks
+  prevBlockMean: number | null;
+  superMean: number | null;
   blockCount: number;
 };
 
-function createState(): CompressionState {
+function createState(): ProcessingState {
   return { rawBuffer: [], prevBlockMean: null, superMean: null, blockCount: 0 };
 }
 
@@ -29,9 +27,7 @@ function detectType(value: number, warnLow: number, warnHigh: number, approachMa
 
 export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConfig): SensorAnalysisResult {
   const { warnLow, warnHigh } = thresholds;
-  const range = warnHigh - warnLow;
-  // Approach margin: 20% of safe range from each boundary
-  const approachMargin = Math.max(range * 0.2, 0.001);
+  const approachMargin = Math.max((warnHigh - warnLow) * 0.2, 0.001);
 
   const state = createState();
   const anomalies: AnomalyEvent[] = [];
@@ -72,7 +68,6 @@ export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConf
 
     state.rawBuffer.push(point);
 
-    // When buffer reaches 10, compress into a block
     if (state.rawBuffer.length === 10) {
       const blockMean = state.rawBuffer.reduce((s, p) => s + p.value, 0) / 10;
 
@@ -95,7 +90,6 @@ export function analyzeDataPoints(points: DataPoint[], thresholds: ThresholdConf
     }
   }
 
-  // Partial block for remaining points
   if (state.rawBuffer.length > 0) {
     const partialMean = state.rawBuffer.reduce((s, p) => s + p.value, 0) / state.rawBuffer.length;
     compressedBlocks.push({

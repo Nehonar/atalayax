@@ -6,7 +6,6 @@ import {
   ArrowRight,
   CheckCircle,
   ChevronUp,
-  FileSpreadsheet,
   Loader2,
   TrendingDown,
   TrendingUp,
@@ -668,30 +667,6 @@ export function SensorDemoShell({ session }: SensorDemoShellProps) {
         </div>
       </div>
 
-      {/* Algorithm explanation */}
-      <div className="mx-auto mt-10 max-w-5xl rounded-[2rem] border border-white/8 bg-white/3 p-6 sm:p-8">
-        <div className="flex items-center gap-3">
-          <FileSpreadsheet className="h-5 w-5 text-cyan-300/70" />
-          <p className="font-medium text-white/70">Algoritmo de compresión jerárquica</p>
-        </div>
-        <div className="mt-4 grid gap-4 text-sm text-white/50 sm:grid-cols-3">
-          <div>
-            <p className="mb-1 font-medium text-white/70">Nivel 0 — Raw buffer</p>
-            <p>Cada nuevo punto se compara con el anterior y con la media del bloque activo (hasta 10 puntos).</p>
-          </div>
-          <div>
-            <p className="mb-1 font-medium text-white/70">Nivel 1 — Compresión por bloque</p>
-            <p>Cada 10 puntos se comprimen en una media. Se conserva el bloque anterior como referencia.</p>
-          </div>
-          <div>
-            <p className="mb-1 font-medium text-white/70">Estado de comparación</p>
-            <p>
-              En cualquier momento: máx 10 puntos raw + 1 media de bloque previo + 1 super-media = 12 unidades
-              de comparación. La precisión no se pierde: media de medias = media exacta.
-            </p>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
