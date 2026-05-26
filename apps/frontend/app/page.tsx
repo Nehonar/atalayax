@@ -4,9 +4,9 @@ import { AppShell } from '../components/ui-shell';
 
 export default function HomePage() {
   return (
-    <AppShell>
+    <AppShell variant="light">
       <Hero />
-      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
         <ArchitectureSection />
       </section>
     </AppShell>
