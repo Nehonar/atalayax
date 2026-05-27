@@ -6,7 +6,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": false,
-    "lib": ["ES2022"]
+    "lib": ["ES2022"],
+    "paths": {}
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

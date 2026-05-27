@@ -10,10 +10,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "paths": {
-      "@atalayax/types": ["packages/types/src/index.ts"]
-    }
+    "isolatedModules": true
   }
 }
