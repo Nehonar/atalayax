@@ -496,8 +496,8 @@ function ResultsStep({ result, cfg, clientName, fileName, onReset, onSaved }: {
         <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Resultados</h2>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 shrink-0 rounded-2xl border border-zinc-200 px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-50">
-            <FileDown className="h-3.5 w-3.5" /> Informe
+            className="inline-flex items-center gap-2 shrink-0 rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-100">
+            <FileDown className="h-4 w-4" /> Descargar informe
           </button>
           {!saved ? (
             <button type="button" onClick={() => { setSaved(true); onSaved(); }}
@@ -539,9 +539,9 @@ export function SavedDemoResultsView({ demo, onBack }: { demo: DemoRecord; onBac
           <button
             type="button"
             onClick={() => openReport(demo, clientName)}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-50 transition"
+            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-100"
           >
-            <FileDown className="h-3.5 w-3.5" /> Informe
+            <FileDown className="h-4 w-4" /> Descargar informe
           </button>
           <div className="text-right">
             <p className="font-medium text-zinc-800 truncate max-w-xs">{demo.fileName}</p>
