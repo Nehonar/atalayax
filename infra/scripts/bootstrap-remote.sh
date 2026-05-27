@@ -2,13 +2,20 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # AtalayaX · Bootstrap remoto
 # Ejecutar desde J.A.R.V.I.S.:  bash infra/scripts/bootstrap-remote.sh
+# Si el repo es privado, pasa el token: GITHUB_TOKEN=ghp_xxx bash infra/scripts/bootstrap-remote.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
 SSH_KEY="$HOME/ben/jutsu-key/jutsu-key.key"
 SERVER="ubuntu@80.225.189.112"
-REPO="https://github.com/nehonar/atalayax.git"
 APP_DIR="/opt/atalayax"
+
+# Construye la URL con token si se proporciona
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  REPO="https://${GITHUB_TOKEN}@github.com/nehonar/atalayax.git"
+else
+  REPO="https://github.com/nehonar/atalayax.git"
+fi
 
 # ── Verificar clave local ─────────────────────────────────────────────────────
 if [ ! -f "$SSH_KEY" ]; then
