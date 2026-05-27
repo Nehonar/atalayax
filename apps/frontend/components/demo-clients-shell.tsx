@@ -17,15 +17,6 @@ const sectorIcon: Record<DemoClient['sector'], typeof Building2> = {
   otro: Thermometer,
 };
 
-const anomalyLabels: Record<string, string> = {
-  above_warn: 'Por encima del límite',
-  below_warn: 'Por debajo del límite',
-  approaching_high: 'Tendencia al límite alto',
-  approaching_low: 'Tendencia al límite bajo',
-  statistical_high: 'Pico estadístico alto',
-  statistical_low: 'Pico estadístico bajo',
-};
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -46,27 +37,27 @@ function NewClientForm({ onCreated, onCancel }: { onCreated: (c: DemoClient) => 
   }
 
   return (
-    <div className="rounded-[2rem] border border-cyan-400/20 bg-cyan-400/5 p-6">
+    <div className="rounded-[2rem] border border-cyan-200 bg-cyan-50 p-6">
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="font-semibold">Nuevo cliente</h3>
-        <button type="button" onClick={onCancel} className="text-white/40 hover:text-white/70">
+        <h3 className="font-semibold text-zinc-800">Nuevo cliente</h3>
+        <button type="button" onClick={onCancel} className="text-zinc-400 hover:text-zinc-700">
           <X className="h-4 w-4" />
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label className="block text-sm text-white/55">Nombre de la empresa</label>
+          <label className="block text-sm text-zinc-500">Nombre de la empresa</label>
           <input
             autoFocus
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ej. Transportes García SA"
-            className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-white/30 focus:border-cyan-400/40 focus:outline-none"
+            className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-300 focus:border-cyan-400 focus:outline-none"
           />
         </div>
         <div className="space-y-2">
-          <label className="block text-sm text-white/55">Sector</label>
+          <label className="block text-sm text-zinc-500">Sector</label>
           <div className="grid grid-cols-3 gap-2">
             {(['industria', 'logistica', 'otro'] as const).map((s) => {
               const Icon = sectorIcon[s];
@@ -77,8 +68,8 @@ function NewClientForm({ onCreated, onCancel }: { onCreated: (c: DemoClient) => 
                   onClick={() => setSector(s)}
                   className={`flex flex-col items-center gap-2 rounded-2xl border p-3 text-xs transition ${
                     sector === s
-                      ? 'border-cyan-400/40 bg-cyan-400/15 text-cyan-200'
-                      : 'border-white/10 bg-white/4 text-white/50 hover:bg-white/8'
+                      ? 'border-cyan-400 bg-white text-cyan-700 shadow-sm'
+                      : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -91,7 +82,7 @@ function NewClientForm({ onCreated, onCancel }: { onCreated: (c: DemoClient) => 
         <button
           type="submit"
           disabled={!name.trim()}
-          className="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-neutral-950 transition hover:brightness-110 disabled:opacity-40"
+          className="w-full rounded-2xl bg-cyan-600 px-4 py-3 font-semibold text-white transition hover:bg-cyan-700 disabled:opacity-40"
         >
           Crear cliente
         </button>
@@ -111,11 +102,11 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-8">
-        <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-1.5 text-sm text-cyan-200">
+        <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-sm font-medium text-cyan-700">
           Demo interactiva · análisis de sensores
         </span>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight">Selecciona un cliente</h1>
-        <p className="mt-3 text-white/55">
+        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-zinc-900">Selecciona un cliente</h1>
+        <p className="mt-3 text-zinc-500">
           Cada cliente tiene su propio historial de demos. Crea uno nuevo o continúa con uno existente.
         </p>
       </div>
@@ -129,7 +120,7 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="mb-4 flex w-full items-center gap-3 rounded-[2rem] border border-dashed border-cyan-400/30 bg-cyan-400/5 px-6 py-4 text-cyan-300 transition hover:bg-cyan-400/10"
+          className="mb-4 flex w-full items-center gap-3 rounded-[2rem] border border-dashed border-cyan-300 bg-cyan-50 px-6 py-4 text-cyan-700 transition hover:bg-cyan-100"
         >
           <Plus className="h-5 w-5" />
           <span className="font-medium">Nuevo cliente</span>
@@ -145,16 +136,16 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
                 key={client.id}
                 type="button"
                 onClick={() => onSelect(client.id)}
-                className="flex w-full items-center gap-4 rounded-[2rem] border border-white/10 bg-white/4 px-6 py-4 text-left transition hover:bg-white/7"
+                className="flex w-full items-center gap-4 rounded-[2rem] border border-zinc-200 bg-white px-6 py-4 text-left shadow-sm transition hover:bg-zinc-50"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/8">
-                  <Icon className="h-4 w-4 text-cyan-300" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50">
+                  <Icon className="h-4 w-4 text-cyan-600" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-white/90">{client.name}</p>
-                  <p className="mt-0.5 text-sm text-white/45">{sectorLabel[client.sector]}</p>
+                  <p className="font-medium text-zinc-800">{client.name}</p>
+                  <p className="mt-0.5 text-sm text-zinc-500">{sectorLabel[client.sector]}</p>
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
               </button>
             );
           })}
@@ -162,7 +153,7 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
       )}
 
       {clients.length === 0 && !showForm && (
-        <div className="mt-4 rounded-2xl border border-white/8 bg-white/3 p-6 text-center text-sm text-white/40">
+        <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-400">
           Aún no hay clientes. Crea el primero para empezar.
         </div>
       )}
@@ -186,11 +177,11 @@ function DemoSummaryCard({
   ).length;
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/4 p-5">
+    <div className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-white/90 truncate">{demo.fileName}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-white/40">
+          <p className="font-medium text-zinc-800 truncate">{demo.fileName}</p>
+          <div className="mt-1 flex items-center gap-2 text-xs text-zinc-400">
             <Clock className="h-3 w-3" />
             {formatDate(demo.createdAt)}
           </div>
@@ -198,31 +189,31 @@ function DemoSummaryCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="shrink-0 rounded-xl border border-white/8 p-1.5 text-white/30 hover:border-rose-400/20 hover:text-rose-300"
+          className="shrink-0 rounded-xl border border-zinc-200 p-1.5 text-zinc-400 hover:border-rose-200 hover:text-rose-500"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-2xl bg-black/20 px-2 py-2">
-          <p className="text-xs text-white/40">Puntos</p>
-          <p className="mt-0.5 font-semibold">{demo.totalPoints.toLocaleString()}</p>
+        <div className="rounded-2xl bg-zinc-50 px-2 py-2">
+          <p className="text-xs text-zinc-500">Puntos</p>
+          <p className="mt-0.5 font-semibold text-zinc-800">{demo.totalPoints.toLocaleString()}</p>
         </div>
-        <div className={`rounded-2xl px-2 py-2 ${criticalCount > 0 ? 'bg-rose-400/10' : 'bg-black/20'}`}>
-          <p className="text-xs text-white/40">Anomalías</p>
-          <p className={`mt-0.5 font-semibold ${criticalCount > 0 ? 'text-rose-300' : ''}`}>{demo.anomalyCount}</p>
+        <div className={`rounded-2xl px-2 py-2 ${criticalCount > 0 ? 'bg-rose-50' : 'bg-zinc-50'}`}>
+          <p className="text-xs text-zinc-500">Anomalías</p>
+          <p className={`mt-0.5 font-semibold ${criticalCount > 0 ? 'text-rose-600' : 'text-zinc-800'}`}>{demo.anomalyCount}</p>
         </div>
-        <div className="rounded-2xl bg-black/20 px-2 py-2">
-          <p className="text-xs text-white/40">Resolución</p>
-          <p className="mt-0.5 font-semibold">{demo.resolution}</p>
+        <div className="rounded-2xl bg-zinc-50 px-2 py-2">
+          <p className="text-xs text-zinc-500">Resolución</p>
+          <p className="mt-0.5 font-semibold text-zinc-800">{demo.resolution}</p>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-white/40">
+      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
         <span className="truncate">{demo.sensorColumn}</span>
         {demo.warnLow !== undefined && (
-          <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5">
+          <span className="shrink-0 rounded-full border border-zinc-200 px-2 py-0.5">
             [{demo.warnLow}, {demo.warnHigh}]
           </span>
         )}
@@ -231,7 +222,7 @@ function DemoSummaryCard({
       <button
         type="button"
         onClick={onView}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 py-2 text-sm text-white/60 transition hover:bg-white/6"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 py-2 text-sm text-zinc-500 transition hover:bg-zinc-50"
       >
         Ver resultados <ArrowRight className="h-3.5 w-3.5" />
       </button>
@@ -265,24 +256,24 @@ export function ClientDetail({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <button type="button" onClick={onBack} className="mb-6 text-sm text-white/40 hover:text-white/70">
+      <button type="button" onClick={onBack} className="mb-6 text-sm text-zinc-400 hover:text-zinc-700">
         ← Todos los clientes
       </button>
 
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 ring-1 ring-cyan-300/20">
-          <Icon className="h-6 w-6 text-cyan-300" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 ring-1 ring-cyan-200">
+          <Icon className="h-6 w-6 text-cyan-600" />
         </div>
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{client.name}</h1>
-          <p className="mt-1 text-white/50">{sectorLabel[client.sector]}</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">{client.name}</h1>
+          <p className="mt-1 text-zinc-500">{sectorLabel[client.sector]}</p>
         </div>
       </div>
 
       <button
         type="button"
         onClick={onNewDemo}
-        className="mb-6 flex w-full items-center gap-3 rounded-[2rem] border border-dashed border-cyan-400/30 bg-cyan-400/5 px-6 py-4 text-cyan-300 transition hover:bg-cyan-400/10"
+        className="mb-6 flex w-full items-center gap-3 rounded-[2rem] border border-dashed border-cyan-300 bg-cyan-50 px-6 py-4 text-cyan-700 transition hover:bg-cyan-100"
       >
         <Plus className="h-5 w-5" />
         <span className="font-medium">Nueva demo</span>
@@ -300,7 +291,7 @@ export function ClientDetail({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/8 bg-white/3 p-8 text-center text-sm text-white/40">
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-8 text-center text-sm text-zinc-400">
           Aún no hay demos para este cliente. Crea la primera.
         </div>
       )}

@@ -134,7 +134,7 @@ export function ArchitectureSection() {
           con detección de anomalías, deriva y patrones en segundos.
         </p>
         <Link
-          href="/login"
+          href="/demo"
           className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-cyan-600/20 transition hover:bg-cyan-700 hover:scale-[1.02]"
         >
           Probar la demo

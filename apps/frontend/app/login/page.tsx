@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   return (
     <AppShell navItems={['Producto', 'Login', 'Seguridad', 'Roles']}>
-      <LoginPanel onAuthenticated={() => router.push('/dashboard')} />
+      <LoginPanel onAuthenticated={() => router.push('/demo')} />
     </AppShell>
   );
 }
