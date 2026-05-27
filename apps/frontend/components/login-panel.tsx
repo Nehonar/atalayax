@@ -53,7 +53,7 @@ export function LoginPanel({ onAuthenticated }: LoginPanelProps) {
             </div>
             <div>
               <p className="text-sm text-white/45">Acceso de demostración</p>
-              <h1 className="text-3xl font-semibold tracking-tight">Entrar al dashboard</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">Acceder a la demo</h1>
             </div>
           </div>
 
@@ -103,7 +103,7 @@ export function LoginPanel({ onAuthenticated }: LoginPanelProps) {
               disabled={submitting}
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-medium text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? 'Entrando...' : 'Entrar al dashboard'}
+              {submitting ? 'Entrando...' : 'Acceder a la demo'}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>

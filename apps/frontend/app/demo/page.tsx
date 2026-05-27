@@ -30,7 +30,7 @@ export default function DemoPage() {
 
   if (!ready || !session) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 text-white/70">
+      <main className="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 text-zinc-400">
         Preparando sesión...
       </main>
     );
@@ -42,18 +42,18 @@ export default function DemoPage() {
       : '';
 
   return (
-    <AppShell navItems={[{ label: 'Dashboard', href: '/dashboard' }]}>
+    <AppShell variant="light" navItems={[]}>
       <section className="mx-auto max-w-none px-4 py-14 lg:px-6">
 
         {/* Page header */}
         <div className="mx-auto mb-10 max-w-5xl">
-          <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-1.5 text-sm text-cyan-200">
+          <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-sm font-medium text-cyan-700">
             Demo interactiva · usuario autenticado
           </span>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
             Análisis de sensores
           </h1>
-          <p className="mt-3 max-w-2xl text-lg leading-8 text-white/55">
+          <p className="mt-3 max-w-2xl text-lg leading-8 text-zinc-500 italic">
             El algoritmo aprende del silencio, para detectar ruido.
           </p>
         </div>

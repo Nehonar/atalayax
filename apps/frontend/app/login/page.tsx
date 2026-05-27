@@ -11,13 +11,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (readSession()) {
-      router.replace('/dashboard');
+      router.replace('/demo');
     }
   }, [router]);
 
   return (
     <AppShell navItems={['Producto', 'Login', 'Seguridad', 'Roles']}>
-      <LoginPanel onAuthenticated={() => router.push('/dashboard')} />
+      <LoginPanel onAuthenticated={() => router.push('/demo')} />
     </AppShell>
   );
 }
