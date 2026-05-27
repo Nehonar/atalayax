@@ -91,7 +91,8 @@ fi
 echo "▶ Configurando Nginx..."
 sudo cp infra/nginx/atalayax.conf /etc/nginx/sites-available/atalayax.conf
 sudo ln -sf /etc/nginx/sites-available/atalayax.conf /etc/nginx/sites-enabled/atalayax.conf
-sudo nginx -t && sudo systemctl reload nginx
+sudo nginx -t && (sudo systemctl reload nginx 2>/dev/null || sudo systemctl start nginx)
+sudo systemctl enable nginx
 echo "✓ Nginx configurado"
 
 # ── Firewall del sistema (iptables) ────────────────────────────────────────
