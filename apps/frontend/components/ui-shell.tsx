@@ -10,7 +10,7 @@ type AppShellProps = {
   variant?: 'dark' | 'light';
 };
 
-export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arquitectura', 'Dashboard'], variant = 'dark' }: AppShellProps) {
+export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arquitectura'], variant = 'dark' }: AppShellProps) {
   const isLight = variant === 'light';
 
   return (

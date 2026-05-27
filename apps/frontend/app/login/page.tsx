@@ -11,7 +11,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (readSession()) {
-      router.replace('/dashboard');
+      router.replace('/demo');
     }
   }, [router]);
 

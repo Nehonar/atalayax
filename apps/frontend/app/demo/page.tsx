@@ -42,7 +42,7 @@ export default function DemoPage() {
       : '';
 
   return (
-    <AppShell variant="light" navItems={[{ label: 'Dashboard', href: '/dashboard' }]}>
+    <AppShell variant="light" navItems={[]}>
       <section className="mx-auto max-w-none px-4 py-14 lg:px-6">
 
         {/* Page header */}
