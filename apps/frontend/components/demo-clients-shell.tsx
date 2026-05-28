@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Building2, ChevronRight, Clock, Plus, Thermometer, Truck, X } from 'lucide-react';
 import type { DemoClient, DemoRecord } from '@atalayax/types';
-import { createClient, deleteDemo, getDemosForClient, getClients, getClient, clearAllData } from '../lib/demo-store';
+import { createClient, deleteDemo, deleteClient, getDemosForClient, getClients, getClient } from '../lib/demo-store';
 
 const sectorLabel: Record<DemoClient['sector'], string> = {
   industria: 'Industria 4.0',
@@ -132,21 +132,34 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
           {clients.map((client) => {
             const Icon = sectorIcon[client.sector];
             return (
-              <button
-                key={client.id}
-                type="button"
-                onClick={() => onSelect(client.id)}
-                className="flex w-full items-center gap-4 rounded-[2rem] border border-zinc-200 bg-white px-6 py-4 text-left shadow-sm transition hover:bg-zinc-50"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50">
-                  <Icon className="h-4 w-4 text-cyan-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-zinc-800">{client.name}</p>
-                  <p className="mt-0.5 text-sm text-zinc-500">{sectorLabel[client.sector]}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
-              </button>
+              <div key={client.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSelect(client.id)}
+                  className="flex flex-1 items-center gap-4 rounded-[2rem] border border-zinc-200 bg-white px-6 py-4 text-left shadow-sm transition hover:bg-zinc-50"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50">
+                    <Icon className="h-4 w-4 text-cyan-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-zinc-800">{client.name}</p>
+                    <p className="mt-0.5 text-sm text-zinc-500">{sectorLabel[client.sector]}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`¿Borrar "${client.name}" y todas sus demos?`)) {
+                      deleteClient(client.id);
+                      setClients(getClients());
+                    }
+                  }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-500 transition hover:bg-rose-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -158,23 +171,6 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
         </div>
       )}
 
-      {clients.length > 0 && (
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm('¿Borrar todos los clientes y demos guardados?')) {
-                clearAllData();
-                setClients([]);
-              }
-            }}
-            className="flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-600 transition hover:bg-rose-100"
-          >
-            <X className="h-3.5 w-3.5" />
-            Borrar todo
-          </button>
-        </div>
-      )}
     </div>
   );
 }

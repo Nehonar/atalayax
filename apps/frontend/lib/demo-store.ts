@@ -70,6 +70,13 @@ export function deleteDemo(demoId: string): void {
   save(store);
 }
 
+export function deleteClient(clientId: string): void {
+  const store = load();
+  store.clients = store.clients.filter((c) => c.id !== clientId);
+  store.demos = store.demos.filter((d) => d.clientId !== clientId);
+  save(store);
+}
+
 export function clearAllData(): void {
   localStorage.removeItem(STORE_KEY);
 }
