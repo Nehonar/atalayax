@@ -27,8 +27,8 @@ export default function DemoPage() {
       s = {
         accessToken: 'demo',
         expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
-        user: { id: 'demo', email: 'analyst@atalayax.io', role: 'analyst', name: 'Analista Demo' },
-      } as import('@atalayax/types').AuthSessionDto;
+        user: { id: 'demo', email: 'analyst@atalayax.io', role: 'analyst' as const, displayName: 'Analista Demo' },
+      };
       writeSession(s);
     }
     setSession(s);
