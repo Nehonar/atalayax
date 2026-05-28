@@ -6,7 +6,7 @@ import type { AuthSessionDto } from '@atalayax/types';
 import { AppShell } from '../../components/ui-shell';
 import { ClientList, ClientDetail } from '../../components/demo-clients-shell';
 import { SavedDemoResultsView, SensorDemoShell } from '../../components/sensor-demo-shell';
-import { readSession } from '../../lib/auth';
+import { readSession, writeSession } from '../../lib/auth';
 import { getClient, getDemo } from '../../lib/demo-store';
 
 type Screen =
@@ -22,8 +22,15 @@ export default function DemoPage() {
   const [screen, setScreen] = useState<Screen>({ view: 'clients' });
 
   useEffect(() => {
-    const s = readSession();
-    if (!s) { router.replace('/login'); return; }
+    let s = readSession();
+    if (!s) {
+      s = {
+        accessToken: 'demo',
+        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+        user: { id: 'demo', email: 'analyst@atalayax.io', role: 'analyst', name: 'Analista Demo' },
+      } as import('@atalayax/types').AuthSessionDto;
+      writeSession(s);
+    }
     setSession(s);
     setReady(true);
   }, [router]);
