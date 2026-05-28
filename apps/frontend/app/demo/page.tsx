@@ -25,7 +25,7 @@ export default function DemoPage() {
     let s = readSession();
     if (!s) {
       s = {
-        accessToken: 'demo',
+        accessToken: 'demo-token-analyst',
         expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
         user: { id: 'demo', email: 'analyst@atalayax.io', role: 'analyst' as const, displayName: 'Analista Demo' },
       };
