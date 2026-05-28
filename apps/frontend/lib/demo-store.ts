@@ -2,6 +2,10 @@ import type { DemoClient, DemoRecord } from '@atalayax/types';
 
 const STORE_KEY = 'atalayax.demo.store';
 
+function uid(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+}
+
 type Store = {
   clients: DemoClient[];
   demos: DemoRecord[];
@@ -32,7 +36,7 @@ export function getClient(id: string): DemoClient | undefined {
 export function createClient(name: string, sector: DemoClient['sector']): DemoClient {
   const store = load();
   const client: DemoClient = {
-    id: crypto.randomUUID(),
+    id: uid(),
     name,
     sector,
     createdAt: new Date().toISOString(),
@@ -56,7 +60,7 @@ export function saveDemo(record: Omit<DemoRecord, 'id' | 'createdAt'>): DemoReco
   const store = load();
   const demo: DemoRecord = {
     ...record,
-    id: crypto.randomUUID(),
+    id: uid(),
     createdAt: new Date().toISOString(),
   };
   store.demos.unshift(demo);
