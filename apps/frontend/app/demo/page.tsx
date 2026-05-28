@@ -23,7 +23,7 @@ export default function DemoPage() {
 
   useEffect(() => {
     let s = readSession();
-    if (!s) {
+    if (!s || !s.accessToken.startsWith('demo-token-')) {
       s = {
         accessToken: 'demo-token-analyst',
         expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
