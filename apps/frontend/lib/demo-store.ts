@@ -69,3 +69,7 @@ export function deleteDemo(demoId: string): void {
   store.demos = store.demos.filter((d) => d.id !== demoId);
   save(store);
 }
+
+export function clearAllData(): void {
+  localStorage.removeItem(STORE_KEY);
+}

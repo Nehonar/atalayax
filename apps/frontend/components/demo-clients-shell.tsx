@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Building2, ChevronRight, Clock, Plus, Thermometer, Truck, X } from 'lucide-react';
 import type { DemoClient, DemoRecord } from '@atalayax/types';
-import { createClient, deleteDemo, getDemosForClient, getClients, getClient } from '../lib/demo-store';
+import { createClient, deleteDemo, getDemosForClient, getClients, getClient, clearAllData } from '../lib/demo-store';
 
 const sectorLabel: Record<DemoClient['sector'], string> = {
   industria: 'Industria 4.0',
@@ -155,6 +155,24 @@ function ClientList({ onSelect }: { onSelect: (clientId: string) => void }) {
       {clients.length === 0 && !showForm && (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-400">
           Aún no hay clientes. Crea el primero para empezar.
+        </div>
+      )}
+
+      {clients.length > 0 && (
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('¿Borrar todos los clientes y demos guardados?')) {
+                clearAllData();
+                setClients([]);
+              }
+            }}
+            className="flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-600 transition hover:bg-rose-100"
+          >
+            <X className="h-3.5 w-3.5" />
+            Borrar todo
+          </button>
         </div>
       )}
     </div>
