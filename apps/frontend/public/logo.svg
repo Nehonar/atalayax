@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" fill="none">
+  <!-- Tower legs (A shape) -->
+  <path d="M100 148 L56 90 L76 90 L100 136 L124 90 L144 90 Z" fill="#06b6d4"/>
+  <!-- Tower platform -->
+  <rect x="54" y="82" width="92" height="10" rx="2" fill="#06b6d4"/>
+  <!-- Tower cabin body -->
+  <rect x="66" y="40" width="68" height="32" rx="2" fill="#06b6d4"/>
+  <!-- Cabin windows (cutout effect) -->
+  <rect x="72" y="47" width="22" height="18" rx="1" fill="white"/>
+  <rect x="106" y="47" width="22" height="18" rx="1" fill="white"/>
+  <!-- Roof triangle -->
+  <polygon points="100,10 60,40 140,40" fill="#06b6d4"/>
+  <!-- Pulse / heartbeat line -->
+  <polyline
+    points="8,91 42,91 54,91 64,62 76,120 86,72 96,91 104,91 114,62 126,120 136,72 146,91 158,91 192,91"
+    stroke="#06b6d4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
