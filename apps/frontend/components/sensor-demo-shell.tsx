@@ -386,37 +386,93 @@ function ResultsContent({ result, cfg }: { result: SensorAnalysisResult; cfg: Cf
         })}
       </div>
 
-      {/* Compressed chart */}
-      <div className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm">
-        <p className="mb-1 text-sm font-medium text-zinc-600">Vista comprimida — {result.compressedBlocks.length} bloques</p>
-        <div className="mt-4 flex gap-2">
-          {/* Y-axis labels */}
-          <div className="relative shrink-0 w-9" style={{ height: 144 }}>
-            <span className="absolute right-0 text-[10px] text-zinc-400 leading-none" style={{ bottom: '96%', transform: 'translateY(50%)' }}>{round2(maxMean)}</span>
-            <span className="absolute right-0 text-[10px] text-rose-500 leading-none font-medium" style={{ bottom: `${barH(cfg.warnHigh)}%`, transform: 'translateY(50%)' }}>{cfg.warnHigh}</span>
-            <span className="absolute right-0 text-[10px] text-amber-500 leading-none font-medium" style={{ bottom: `${barH(cfg.warnLow)}%`, transform: 'translateY(50%)' }}>{cfg.warnLow}</span>
-            <span className="absolute right-0 text-[10px] text-zinc-400 leading-none" style={{ bottom: 0, transform: 'translateY(50%)' }}>{round2(minMean)}</span>
-          </div>
-          {/* Bars */}
-          <div className="relative flex-1 rounded-2xl bg-zinc-50 p-3 overflow-hidden" style={{ height: 144 }}>
-            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-rose-400/60" style={{ bottom: `${barH(cfg.warnHigh)}%` }} />
-            <div className="pointer-events-none absolute right-3 left-3 border-t border-dashed border-amber-400/50" style={{ bottom: `${barH(cfg.warnLow)}%` }} />
-            <div className="flex h-full items-end gap-px overflow-hidden">
-              {result.compressedBlocks.map((b, i) => (
-                <div key={i} title={`Bloque ${i + 1}: ${round2(b.mean)}`}
-                  className={`flex-1 rounded-t-sm ${barColor(b.mean)}`}
-                  style={{ height: `${barH(b.mean)}%` }} />
-              ))}
+      {/* Line chart */}
+      {(() => {
+        const H = 160;
+        const W = 1000;
+        const PAD = { top: 12, bottom: 12, left: 4, right: 4 };
+        const innerH = H - PAD.top - PAD.bottom;
+        const innerW = W - PAD.left - PAD.right;
+        const blocks = result.compressedBlocks;
+        const n = blocks.length;
+
+        function yPct(v: number) {
+          return PAD.top + ((maxMean - v) / chartRange) * innerH;
+        }
+
+        const highY = yPct(cfg.warnHigh);
+        const lowY  = yPct(cfg.warnLow);
+
+        // Build colored line segments
+        type Seg = { x1: number; y1: number; x2: number; y2: number; color: string };
+        const segs: Seg[] = [];
+        function ptColor(v: number) {
+          if (v > cfg.warnHigh || v < cfg.warnLow) return '#f87171'; // rose
+          const m = (cfg.warnHigh - cfg.warnLow) * 0.15;
+          if (v > cfg.warnHigh - m || v < cfg.warnLow + m) return '#fbbf24'; // amber
+          return '#22d3ee'; // cyan
+        }
+        for (let i = 0; i < n - 1; i++) {
+          const x1 = PAD.left + (i / (n - 1)) * innerW;
+          const x2 = PAD.left + ((i + 1) / (n - 1)) * innerW;
+          const y1 = yPct(blocks[i].mean);
+          const y2 = yPct(blocks[i + 1].mean);
+          segs.push({ x1, y1, x2, y2, color: ptColor(blocks[i].mean) });
+        }
+
+        return (
+          <div className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm">
+            <p className="mb-1 text-sm font-medium text-zinc-600">
+              Vista comprimida — {n} puntos · línea de tendencia
+            </p>
+            <div className="mt-3 flex gap-2">
+              {/* Y-axis */}
+              <div className="relative shrink-0 w-10 text-right" style={{ height: H }}>
+                {[
+                  { v: maxMean, cls: 'text-zinc-400' },
+                  { v: cfg.warnHigh, cls: 'text-rose-500 font-medium' },
+                  { v: cfg.warnLow,  cls: 'text-rose-500 font-medium' },
+                  { v: minMean, cls: 'text-zinc-400' },
+                ].map(({ v, cls }) => (
+                  <span key={v} className={`absolute right-0 text-[10px] leading-none ${cls}`}
+                    style={{ top: yPct(v), transform: 'translateY(-50%)' }}>
+                    {round2(v)}
+                  </span>
+                ))}
+              </div>
+              {/* SVG chart */}
+              <div className="relative flex-1 rounded-2xl bg-zinc-50 overflow-hidden" style={{ height: H }}>
+                <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                  {/* Normal zone band */}
+                  <rect x={PAD.left} y={highY} width={innerW} height={lowY - highY}
+                    fill="#06b6d420" />
+                  {/* Limit lines */}
+                  <line x1={PAD.left} x2={PAD.left + innerW} y1={highY} y2={highY}
+                    stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
+                  <line x1={PAD.left} x2={PAD.left + innerW} y1={lowY} y2={lowY}
+                    stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
+                  {/* Center line */}
+                  <line x1={PAD.left} x2={PAD.left + innerW}
+                    y1={yPct((cfg.warnHigh + cfg.warnLow) / 2)}
+                    y2={yPct((cfg.warnHigh + cfg.warnLow) / 2)}
+                    stroke="#06b6d440" strokeWidth="1" strokeDasharray="3 6" />
+                  {/* Colored line segments */}
+                  {segs.map((s, i) => (
+                    <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
+                      stroke={s.color} strokeWidth="2" strokeLinecap="round" />
+                  ))}
+                </svg>
+              </div>
+            </div>
+            <div className="mt-2 flex gap-4 text-[11px] text-zinc-400 pl-12">
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-400" />Normal</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400" />Tendencia</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-400" />Anomalía</span>
+              <span className="ml-auto text-zinc-300">↑ {cfg.warnHigh} límite sup. · ↓ {cfg.warnLow} límite inf.</span>
             </div>
           </div>
-        </div>
-        <div className="mt-2 flex gap-4 text-[11px] text-zinc-400 pl-11">
-          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-cyan-500/60" />Normal</span>
-          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-amber-400/70" />Tendencia</span>
-          <span><span className="mr-1 inline-block h-2 w-2 rounded-sm bg-rose-400/80" />Anomalía</span>
-          <span className="ml-auto text-zinc-300">↑ {cfg.warnHigh} límite sup. · ↓ {cfg.warnLow} límite inf.</span>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Drift segments */}
       <DriftSection segments={result.driftSegments} />
