@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Activity } from 'lucide-react';
+import Image from 'next/image';
 
 type NavItem = string | { label: string; href: string };
 
@@ -22,8 +22,8 @@ export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arqui
         <div className="mx-auto max-w-7xl px-6 py-5">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isLight ? 'bg-cyan-500/10 ring-1 ring-cyan-500/20' : 'bg-cyan-400/15 ring-1 ring-cyan-300/20'}`}>
-                <Activity className={`h-5 w-5 ${isLight ? 'text-cyan-600' : 'text-cyan-300'}`} />
+              <div className="flex h-11 w-11 items-center justify-center">
+                <Image src="/images/logo.jpeg" alt="AtalayaX" width={44} height={44} className="object-contain" />
               </div>
               <div>
                 <p className={`text-lg font-semibold tracking-tight ${isLight ? 'text-zinc-900' : ''}`}>AtalayaX</p>
