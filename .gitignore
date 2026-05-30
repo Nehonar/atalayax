@@ -32,6 +32,9 @@ node_modules/
 .next/
 dist/
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# Deployment secrets (SSH keys, credentials)
+secrets/
+
+# Local reference docs (legal, regulatory, etc.)
+docs-local/
+
