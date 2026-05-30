@@ -75,7 +75,7 @@ function anomalyRows(anomalies: AnomalyEvent[]): string {
     </tr>`).join('');
 }
 
-export function buildReport(demo: DemoRecord, clientName: string): string {
+export function buildReport(demo: DemoRecord, clientName: string, logoSrc = ''): string {
   const result: SensorAnalysisResult = demo.result;
   const criticalCount = result.anomalies.filter(
     (a) => a.type === 'above_warn' || a.type === 'below_warn' || a.type === 'statistical_high' || a.type === 'statistical_low',
@@ -97,7 +97,7 @@ export function buildReport(demo: DemoRecord, clientName: string): string {
 
   header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 24px; border-bottom: 2px solid #e2e8f0; margin-bottom: 32px; }
   .brand { display: flex; align-items: center; gap: 14px; }
-  .brand-icon { width: 44px; height: 44px; border-radius: 12px; background: #ecfeff; border: 1px solid #a5f3fc; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .brand-icon { width: 44px; height: 44px; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .brand-name { font-size: 20px; font-weight: 700; color: #0e7490; letter-spacing: -0.5px; }
   .brand-sub { font-size: 12px; color: #64748b; }
   .report-meta { text-align: right; font-size: 13px; color: #64748b; }
@@ -139,7 +139,7 @@ export function buildReport(demo: DemoRecord, clientName: string): string {
 
 <header>
   <div class="brand">
-    <div class="brand-icon">◎</div>
+    <div class="brand-icon">${logoSrc ? `<img src="${logoSrc}" alt="AtalayaX" style="width:44px;height:44px;object-fit:contain;" />` : '◎'}</div>
     <div>
       <div class="brand-name">AtalayaX</div>
       <div class="brand-sub">Industrial data intelligence</div>
@@ -205,8 +205,20 @@ ${result.anomalies.length > 0 ? `
 </html>`;
 }
 
-export function openReport(demo: DemoRecord, clientName: string) {
-  const html = buildReport(demo, clientName);
+export async function openReport(demo: DemoRecord, clientName: string) {
+  let logoSrc = '';
+  try {
+    const res = await fetch('/images/logo.jpeg');
+    const imgBlob = await res.blob();
+    logoSrc = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(imgBlob);
+    });
+  } catch {
+    // logo unavailable — fall back to symbol
+  }
+  const html = buildReport(demo, clientName, logoSrc);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
