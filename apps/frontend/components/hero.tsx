@@ -28,76 +28,120 @@ const pillars = [
   },
 ];
 
+// Rising data: temperature drifting toward upper limit
+const pts = [
+  { x: 20,  y: 108 },
+  { x: 70,  y: 104 },
+  { x: 120, y: 100 },
+  { x: 170, y: 95  },
+  { x: 220, y: 89  },
+  { x: 270, y: 81  },
+  { x: 320, y: 71  },
+  { x: 370, y: 60  }, // approaching limit — amber for AtalayaX
+  { x: 420, y: 46  }, // breach — rose
+  { x: 470, y: 38  },
+];
+
+const W = 520;
+const H = 150;
+const limitY  = 48;   // upper limit (dashed rose line)
+const amberY  = 64;   // approaching zone starts here (15% margin)
+const bandBot = 114;  // lower limit (dashed rose line)
+const PL = 8;
+const PR = 8;
+
+type Seg = { x1: number; y1: number; x2: number; y2: number; color: string };
+
+function buildSegs(colorFn: (y: number) => string): Seg[] {
+  return pts.slice(0, -1).map((p, i) => ({
+    x1: p.x, y1: p.y,
+    x2: pts[i + 1].x, y2: pts[i + 1].y,
+    color: colorFn(p.y),
+  }));
+}
+
+function colorAtalaya(y: number) {
+  if (y <= limitY) return '#f87171';
+  if (y <= amberY) return '#fbbf24';
+  return '#22d3ee';
+}
+function colorTraditional(y: number) {
+  return y <= limitY ? '#f87171' : '#22d3ee';
+}
+
+const tradSegs = buildSegs(colorTraditional);
+const ataSegs  = buildSegs(colorAtalaya);
+const tradDetect = pts[8]; // first breach
+const ataDetect  = pts[7]; // first amber (trend)
+
+function ChartBase() {
+  return (
+    <>
+      <rect x={PL} y={limitY} width={W - PL - PR} height={bandBot - limitY} fill="#06b6d415" />
+      <line x1={PL} x2={W - PR} y1={limitY} y2={limitY} stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
+      <line x1={PL} x2={W - PR} y1={bandBot} y2={bandBot} stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
+    </>
+  );
+}
+
 function ComparisonChart() {
-  // Shared geometry
-  const W = 300;
-  const H = 150;
-  const limitY = 45;
-  const baseY = 125;
-  const riseStartX = 70;
-  const riseEndX = 270;
-  // Line rises from (riseStartX, baseY) to (riseEndX, limitY - 20)
-  // y at position x: baseY - ((x - riseStartX) / (riseEndX - riseStartX)) * (baseY - (limitY - 20))
-  const rise = baseY - (limitY - 20);
-  function lineY(x: number) {
-    if (x <= riseStartX) return baseY;
-    if (x >= riseEndX) return limitY - 20;
-    return baseY - ((x - riseStartX) / (riseEndX - riseStartX)) * rise;
-  }
-  // Traditional: detects where line crosses limitY
-  const tradX = riseStartX + ((baseY - limitY) / rise) * (riseEndX - riseStartX);
-  // AtalayaX: detects earlier, about 40% into the rise
-  const earlyX = riseStartX + 0.38 * (riseEndX - riseStartX);
-  const earlyY = lineY(earlyX);
-
-  const linePath = `M 10,${baseY} L ${riseStartX},${baseY} L ${riseEndX},${limitY - 20}`;
-
   return (
     <div className="mx-auto mt-14 max-w-4xl">
-      <p className="mb-6 text-center text-sm font-medium text-zinc-400 uppercase tracking-widest">La diferencia en una imagen</p>
+      <p className="mb-6 text-center text-sm font-medium uppercase tracking-widest text-zinc-400">
+        La diferencia en una imagen
+      </p>
+
       <div className="grid gap-4 sm:grid-cols-2">
 
         {/* Traditional */}
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-zinc-500">Alarmas tradicionales</p>
+          <p className="mb-0.5 text-sm font-semibold text-zinc-500">Alarmas tradicionales</p>
+          <p className="mb-3 text-xs text-zinc-400">Detecta cuando ya cruzó el límite</p>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-            {/* limit line */}
-            <line x1="10" x2={W - 10} y1={limitY} y2={limitY}
-              stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
-            <text x={W - 12} y={limitY - 5} textAnchor="end" fontSize="10" fill="#f87171">límite</text>
-            {/* sensor line */}
-            <path d={linePath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* detection: X at limit crossing */}
-            <line x1={tradX - 7} y1={limitY - 7} x2={tradX + 7} y2={limitY + 7} stroke="#dc2626" strokeWidth="2.5" />
-            <line x1={tradX + 7} y1={limitY - 7} x2={tradX - 7} y2={limitY + 7} stroke="#dc2626" strokeWidth="2.5" />
-            <text x={tradX} y={limitY + 22} textAnchor="middle" fontSize="10" fill="#dc2626" fontWeight="600">Detectado aquí</text>
-            {/* arrow */}
-            <text x={tradX} y={H - 8} textAnchor="middle" fontSize="9" fill="#94a3b8">cuando ya cruzó el límite</text>
+            <ChartBase />
+            {tradSegs.map((s, i) => (
+              <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
+                stroke={s.color} strokeWidth="2.5" strokeLinecap="round" />
+            ))}
+            {/* Late detection: X at breach */}
+            <line x1={tradDetect.x - 8} y1={tradDetect.y - 8}
+                  x2={tradDetect.x + 8} y2={tradDetect.y + 8} stroke="#dc2626" strokeWidth="2.5" />
+            <line x1={tradDetect.x + 8} y1={tradDetect.y - 8}
+                  x2={tradDetect.x - 8} y2={tradDetect.y + 8} stroke="#dc2626" strokeWidth="2.5" />
+            <text x={tradDetect.x} y={tradDetect.y - 14}
+              textAnchor="middle" fontSize="10" fill="#dc2626" fontWeight="600">Ya es tarde</text>
           </svg>
+          <div className="mt-2 flex gap-4 text-[11px] text-zinc-400">
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-400" />Normal</span>
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-400" />Alarma</span>
+          </div>
         </div>
 
         {/* AtalayaX */}
-        <div className="rounded-2xl border border-cyan-200 bg-cyan-50/40 p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-cyan-700">AtalayaX</p>
+        <div className="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-5 shadow-sm">
+          <p className="mb-0.5 text-sm font-semibold text-cyan-700">AtalayaX</p>
+          <p className="mb-3 text-xs text-zinc-500">Detecta la tendencia antes de llegar al límite</p>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-            {/* limit line */}
-            <line x1="10" x2={W - 10} y1={limitY} y2={limitY}
-              stroke="#f87171" strokeWidth="1.5" strokeDasharray="6 4" />
-            <text x={W - 12} y={limitY - 5} textAnchor="end" fontSize="10" fill="#f87171">límite</text>
-            {/* sensor line */}
-            <path d={linePath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* detection: circle earlier in rise */}
-            <circle cx={earlyX} cy={earlyY} r="7" fill="#06b6d4" opacity="0.9" />
-            <circle cx={earlyX} cy={earlyY} r="12" fill="none" stroke="#06b6d4" strokeWidth="1.5" opacity="0.4" />
-            <text x={earlyX} y={earlyY + 24} textAnchor="middle" fontSize="10" fill="#0891b2" fontWeight="600">Detectado aquí</text>
-            {/* distance annotation */}
-            <line x1={earlyX + 14} y1={earlyY} x2={tradX - 6} y2={limitY}
-              stroke="#06b6d4" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-            <text x={tradX} y={H - 8} textAnchor="middle" fontSize="9" fill="#0891b2">horas antes de cruzar el límite</text>
+            <ChartBase />
+            {ataSegs.map((s, i) => (
+              <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
+                stroke={s.color} strokeWidth="2.5" strokeLinecap="round" />
+            ))}
+            {/* Early detection: amber circle at trend */}
+            <circle cx={ataDetect.x} cy={ataDetect.y} r="8" fill="#fbbf24" opacity="0.9" />
+            <circle cx={ataDetect.x} cy={ataDetect.y} r="14" fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.5" />
+            <text x={ataDetect.x} y={ataDetect.y - 22}
+              textAnchor="middle" fontSize="10" fill="#d97706" fontWeight="600">Aviso de tendencia</text>
           </svg>
+          <div className="mt-2 flex gap-4 text-[11px] text-zinc-400">
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-400" />Normal</span>
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400" />Tendencia</span>
+            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-400" />Alarma</span>
+          </div>
         </div>
 
       </div>
+
       <p className="mt-5 text-center text-base text-zinc-500">
         <span className="font-semibold text-zinc-700">Las alarmas detectan límites.</span>
         {' '}AtalayaX detecta tendencias.
@@ -138,10 +182,11 @@ export function Hero() {
             Ver informe de ejemplo
           </Link>
         </div>
-        <p className="mt-3 text-sm text-zinc-400">Sin instalación · Tus datos no se almacenan · Detecta el fallo antes de que ocurra.</p>
+        <p className="mt-3 text-sm text-zinc-400">
+          Sin instalación · Tus datos no se almacenan · Detecta el fallo antes de que ocurra.
+        </p>
       </div>
 
-      {/* Comparative chart */}
       <ComparisonChart />
 
       {/* Three pillars */}
