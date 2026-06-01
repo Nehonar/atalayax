@@ -6,7 +6,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-SSH_KEY="$HOME/ben/jutsu-key/jutsu-key.key"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SSH_KEY="$REPO_ROOT/secrets/jutsu-key.key"
 SERVER="ubuntu@80.225.189.112"
 
 chmod 600 "$SSH_KEY"

@@ -543,7 +543,7 @@ function ResultsStep({ result, cfg, clientName, fileName, onReset, onSaved }: {
       totalPoints: result.totalPoints, anomalyCount: result.anomalies.length,
       overallMean: result.overallMean, result,
     };
-    openReport(tempRecord, clientName);
+    void openReport(tempRecord, clientName);
   }
 
   return (
@@ -594,7 +594,7 @@ export function SavedDemoResultsView({ demo, onBack }: { demo: DemoRecord; onBac
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => openReport(demo, clientName)}
+            onClick={() => void openReport(demo, clientName)}
             className="inline-flex items-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-100"
           >
             <FileDown className="h-4 w-4" /> Descargar informe

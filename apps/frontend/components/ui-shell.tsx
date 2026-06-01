@@ -23,12 +23,9 @@ export function AppShell({ children, navItems = ['Producto', 'Seguridad', 'Arqui
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center">
-                <Image src="/images/logo.jpeg" alt="AtalayaX" width={44} height={44} className="object-contain" />
+                <Image src="/images/logo.png" alt="" width={44} height={44} className="object-contain" />
               </div>
-              <div>
-                <p className={`text-lg font-semibold tracking-tight ${isLight ? 'text-zinc-900' : ''}`}>AtalayaX</p>
-                <p className={`text-sm ${isLight ? 'text-zinc-500' : 'text-white/45'}`}>Industrial data intelligence</p>
-              </div>
+              <Image src="/images/nombre.png" alt="AtalayaX" width={160} height={44} className="h-9 w-auto object-contain" />
             </Link>
 
             <nav className={`flex flex-wrap gap-3 text-sm ${isLight ? 'text-zinc-600' : 'text-white/60'}`}>
