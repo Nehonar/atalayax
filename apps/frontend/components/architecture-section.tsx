@@ -82,15 +82,15 @@ export function ArchitectureSection() {
               Rendimiento
             </span>
             <h2 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-              Resultados en milisegundos,<br />no en minutos.
+              Resultados en segundos,<br />sin infraestructura adicional.
             </h2>
             <p className="mt-4 max-w-xl text-lg leading-8 text-zinc-600">
-              El algoritmo de compresión jerárquica de AtalayaX analiza millones de puntos
-              en segundos, sin almacenar el histórico completo en memoria.
+              Sube un CSV con millones de lecturas y obtén el análisis completo antes de
+              terminar el café. Sin servidores dedicados, sin configuración previa.
             </p>
             <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-400">
-              A diferencia de los métodos de fuerza bruta —que comparan cada dato con todos
-              los anteriores—, nuestro algoritmo opera en tiempo lineal y memoria constante.
+              Diseñado para operar en tiempo lineal y memoria constante, independientemente
+              del volumen de datos históricos.
             </p>
           </div>
 
