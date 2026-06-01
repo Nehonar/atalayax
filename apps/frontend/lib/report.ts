@@ -208,7 +208,7 @@ ${result.anomalies.length > 0 ? `
 export async function openReport(demo: DemoRecord, clientName: string) {
   let logoSrc = '';
   try {
-    const res = await fetch('/images/logo.jpeg');
+    const res = await fetch('/images/logo.png');
     const imgBlob = await res.blob();
     logoSrc = await new Promise<string>((resolve) => {
       const reader = new FileReader();
